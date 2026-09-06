@@ -2041,7 +2041,11 @@ pre.code-block.line-numbers {
 #pgd-modal-host {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.45);
+  /* Overlays grubu (Alert Dialog / Dialog / Drawer) ortak backdrop'u —
+     bt-win-overlay ile birebir aynı: %40 siyah + 4px blur. */
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -4587,7 +4591,7 @@ pre.code-block.line-numbers {
 /* ── bt-win-overlay — tam sayfa overlay (bt-window ile kullanılır) ── */
 .bt-win-overlay {
   position: fixed; inset: 0; z-index: 999;
-  background: rgba(0,0,0,0.20);
+  background: rgba(0,0,0,0.4);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   opacity: 0; pointer-events: none;
@@ -5197,7 +5201,7 @@ pre.code-block.line-numbers {
 .bt-adlg__text {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--bt-space-xs, 4px);
   width: 100%;
 }
 .bt-adlg .bt-adlg__title {

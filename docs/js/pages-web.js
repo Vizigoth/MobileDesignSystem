@@ -6929,11 +6929,14 @@ const ADLG_SEG_OPTS = [
   { key: '3', label: '3' },
 ];
 
+// İkonlar .bt-icon wrapper'ı içinde render edilir (bkz. adlgHtml) — SVG'ye
+// width/height attribute'u YAZILMAZ, boyut (16×16) global .bt-icon svg
+// kuralından gelir (CLAUDE.md "İkon Wrapper Standardı").
 const _adlgIcons = {
-  information: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`,
-  error:       `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`,
-  warning:     `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`,
-  success:     `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>`,
+  information: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`,
+  error:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`,
+  warning:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`,
+  success:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>`,
 };
 
 // type → primary solid button class (information → primary, diğerleri kendi tema)
@@ -6967,7 +6970,7 @@ function adlgHtml(p) {
 
   return `<div class="bt-adlg bt-adlg--${type} bt-adlg--${position} bt-adlg--seg-${segments}">
   <div class="bt-adlg__body">
-    <div class="bt-adlg__icon-wrap">${_adlgIcons[type] || ''}</div>
+    <div class="bt-adlg__icon-wrap"><span class="bt-icon">${_adlgIcons[type] || ''}</span></div>
     <div class="bt-adlg__text">
       <p class="bt-adlg__title">Title Text Here</p>
       <div class="bt-adlg__desc"><p>Description for additional information displayed below the title to clarify the purpose of the section.</p></div>
@@ -7049,7 +7052,7 @@ function adlgCss(p) {
 
 PAGES_WEB['components/alert-dialog'] = {
   tabs: ['Overview', 'Examples', 'CSS Properties', 'Usage'],
-  toc:  ['Types', 'Button Layout'],
+  toc:  ['Anatomy', 'Types', 'Information', 'Success', 'Warning', 'Error', 'Button Layout', 'Horizontal', 'Vertical'],
   render(tab) {
     const title = 'Alert Dialog';
     const tk = v => `<code style="font-size:12px;font-family:var(--mono)">${v}</code>`;
@@ -7064,7 +7067,8 @@ PAGES_WEB['components/alert-dialog'] = {
           <tr><td>Container</td><td>Shadow</td><td>${tk('--bt-shadow-md')}</td><td>0 2px 4px … / 0 4px 8px …</td></tr>
           <tr><td>Container</td><td>Width</td><td>—</td><td>420px</td></tr>
           <tr><td>Body</td><td>Padding</td><td>${tk('--bt-space-3xl')}</td><td>20px</td></tr>
-          <tr><td>Body</td><td>Gap (icon ↔ text)</td><td>${tk('--bt-space-xs')}</td><td>4px</td></tr>
+          <tr><td>Body</td><td>Gap (icon ↔ text)</td><td>${tk('--bt-space-md')}</td><td>8px</td></tr>
+          <tr><td>Text</td><td>Gap (title ↔ description)</td><td>${tk('--bt-space-xs')}</td><td>4px</td></tr>
           <tr><td>Icon Wrap</td><td>Size</td><td>—</td><td>32×32px</td></tr>
           <tr><td>Icon Wrap</td><td>Radius</td><td>${tk('--bt-radius-full')}</td><td>9999px</td></tr>
           <tr><td>Icon Wrap · Information</td><td>Background</td><td>${tk('--bt-primary-subtle')}</td><td>#e2edfc</td></tr>
@@ -7083,6 +7087,8 @@ PAGES_WEB['components/alert-dialog'] = {
           <tr><td>Footer</td><td>Gap</td><td>${tk('--bt-space-md')}</td><td>8px</td></tr>
           <tr><td>Confirm Button · Horizontal</td><td>Width</td><td>—</td><td>80px</td></tr>
           <tr><td>Confirm Button · Vertical</td><td>Width</td><td>—</td><td>100% (full)</td></tr>
+          <tr><td>Overlay (backdrop)</td><td>Background</td><td>—</td><td>rgba(0,0,0,0.4)</td></tr>
+          <tr><td>Overlay (backdrop)</td><td>Backdrop-filter</td><td>—</td><td>blur(4px) — Overlays grubu ortak backdrop'u (Dialog / Drawer ile aynı)</td></tr>
         </tbody>
       </table>
     `};
@@ -7103,6 +7109,44 @@ PAGES_WEB['components/alert-dialog'] = {
         <li>Type'ı dekoratif amaçla seçme — her tipin anlamsal bir karşılığı var</li>
       </ul>
     `};
+
+    // Overview'daki per-Type / per-Position bölümlerinin kilitli playground'u —
+    // bir eksen (type veya position) sabit, diğer tüm eksenler serbest.
+    const adlgLockedPg = (cfg) => registerPlayground({
+      id: cfg.id,
+      variants: [{ key: cfg.lockKey, label: cfg.lockLabel }],
+      props: cfg.props,
+      preview: (v, p) => `<div style="display:flex;align-items:center;justify-content:center;padding:24px;">${adlgHtml({ ...p, ...cfg.fixed })}</div>`,
+      code:    (v, p) => adlgHtml({ ...p, ...cfg.fixed }),
+      css:     (v, p) => adlgCss({ ...p, ...cfg.fixed }),
+      trigger: { label: 'Click Me', modal: true },
+    });
+    const adlgTypeSection = (type) => {
+      const label = ADLG_TYPE_OPTS.find(t => t.key === type).label;
+      return adlgLockedPg({
+        id: `pgd-alert-dialog-${type}-sec`,
+        lockKey: type, lockLabel: label, fixed: { type },
+        props: [
+          { key: 'position', label: 'Button Position', options: ADLG_POS_OPTS, default: 'horizontal' },
+          { key: 'segments', label: 'Button Segments', options: ADLG_SEG_OPTS, default: '2' },
+        ],
+      });
+    };
+
+    // Examples'ta tekrar eden "o tipe kilitli, Segments × Position" önizleme
+    // tablosu — her satır canlı adlgHtml (butonları gerçekten kapatır).
+    const adlgTypeTable = (type) => `
+      <table class="token-table">
+        <thead><tr><th>Segments</th><th>Vertical</th><th>Horizontal</th></tr></thead>
+        <tbody>
+          ${['1', '2', '3'].map(seg => `
+          <tr>
+            <td><span class="token-name">${seg}</span></td>
+            <td>${adlgHtml({ type, position: 'vertical', segments: seg })}</td>
+            <td>${adlgHtml({ type, position: 'horizontal', segments: seg })}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
 
     if (tab === 'Examples') return { title, html: `
       <h2 id="Types">Types</h2>
@@ -7136,6 +7180,22 @@ PAGES_WEB['components/alert-dialog'] = {
           </tr>
         </tbody>
       </table>
+
+      <h2 id="Information">Information</h2>
+      <p class="page-desc">Nötr, bilgilendirici içerik — kullanıcıya bir durumu veya bağlamı açıklar, yıkıcı bir karar istemez. İkon badge'i ${tk('--bt-primary-subtle')} zemin + ${tk('--bt-icon-information-default')} ikon, Confirm butonu ${tk('bt-btn--primary-solid')} kullanır; marka mavisi tonu "devam et" hissi verir. Aşağıda her segment sayısı iki buton düzeniyle gösterilir.</p>
+      ${adlgTypeTable('information')}
+
+      <h2 id="Success">Success</h2>
+      <p class="page-desc">Başarıyla tamamlanan bir eylemin teyidi — kayıt oluşturuldu, işlem gönderildi gibi. İkon badge'i ${tk('--bt-success-subtle')} zemin + ${tk('--bt-icon-success-default')} ikon, Confirm butonu ${tk('bt-btn--success-solid')}; yeşil ton olumlu sonucu pekiştirir. Genelde tek buton (Segments=1) yeterlidir.</p>
+      ${adlgTypeTable('success')}
+
+      <h2 id="Warning">Warning</h2>
+      <p class="page-desc">Geri alınamaz olabilecek bir seçim öncesi uyarı — kullanıcıyı durdurup düşünmeye yönlendirir ama eylem henüz yıkıcı değildir. İkon badge'i ${tk('--bt-warning-subtle')} zemin + ${tk('--bt-icon-warning-default')} ikon, Confirm butonu ${tk('bt-btn--warning-solid')}; amber ton dikkat çeker. Genelde Segments=2 (Cancel + devam) ile kullanılır.</p>
+      ${adlgTypeTable('warning')}
+
+      <h2 id="Error">Error</h2>
+      <p class="page-desc">Yıkıcı eylemlerin (silme, kaldırma, kalıcı iptal) son onayı veya bir hata durumunun bildirimi. İkon badge'i ${tk('--bt-error-subtle')} zemin + ${tk('--bt-icon-error-default')} ikon, Confirm butonu ${tk('bt-btn--error-solid')}; kırmızı ton geri dönüşü olmayan sonucu vurgular. Her zaman bir Cancel seçeneği sun (Segments≥2).</p>
+      ${adlgTypeTable('error')}
 
       <h2 id="Button Layout">Button Layout</h2>
       <p class="page-desc">Footer, iki buton düzeni (Horizontal / Vertical) ve 1–3 arası segment sayısını destekler. Horizontal düzende butonlar sağa hizalanır ve her biri 80px sabit genişlik alır; Vertical düzende butonlar tam genişlikte üst üste dizilir — mobil uyumlu onay ekranları için tercih edilir. Segment sayısı birincil eylem (Confirm), geri adım (Cancel) ve üçüncül seçenek (örn. Sil) arasındaki dengeyi belirler.</p>
@@ -7174,6 +7234,32 @@ PAGES_WEB['components/alert-dialog'] = {
           </tr>
         </tbody>
       </table>
+
+      <h2 id="Horizontal">Horizontal</h2>
+      <p class="page-desc">Varsayılan buton düzeni: butonlar footer'ın sağına hizalanır ve her biri 80px sabit genişlik alır — ghost(lar) solda, Confirm en sağda. Masaüstü onay diyaloglarında ve kısa buton metinlerinde tercih edilir; sabit genişlik butonları hizalı tutar. ${tk('.bt-adlg--horizontal')} modifier'ı footer'a ${tk('justify-content: flex-end')} uygular. Aşağıda dört tip, horizontal düzende (Segments=2) yan yana.</p>
+      <table class="token-table">
+        <thead><tr><th>Type</th><th>Preview (Horizontal · Segments 2)</th></tr></thead>
+        <tbody>
+          ${ADLG_TYPE_OPTS.map(t => `
+          <tr>
+            <td><span class="token-name">${t.label}</span></td>
+            <td>${adlgHtml({ type: t.key, position: 'horizontal', segments: '2' })}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+
+      <h2 id="Vertical">Vertical</h2>
+      <p class="page-desc">Varsayılan-olmayan buton düzeni: butonlar tam genişlikte üst üste dizilir, Confirm en üstte, Cancel/üçüncül seçenek altında — dar ekranlarda ve dokunmatik onay akışlarında tercih edilir. ${tk('.bt-adlg--vertical')} modifier'ı ${tk('flex-direction: column')} uygular; Segments≥2'de butonlar ${tk('align-items: flex-end')} ile sağa toplanır, Segments=1'de ortalanır. Aşağıda dört tip, vertical düzende (Segments=2) yan yana.</p>
+      <table class="token-table">
+        <thead><tr><th>Type</th><th>Preview (Vertical · Segments 2)</th></tr></thead>
+        <tbody>
+          ${ADLG_TYPE_OPTS.map(t => `
+          <tr>
+            <td><span class="token-name">${t.label}</span></td>
+            <td>${adlgHtml({ type: t.key, position: 'vertical', segments: '2' })}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
     `};
 
     // Overview
@@ -7193,6 +7279,20 @@ PAGES_WEB['components/alert-dialog'] = {
       })}
 
       <p class="page-desc">Alert Dialog, kullanıcıdan onay gerektiren veya önemli bilgi içeren modal bir iletişim kutusudur. 420px sabit genişliğiyle ekranın odak noktası olur ve arka plan etkileşimini engeller — bu, kullanıcının kararını erteleyemeyeceği kritik anlarda kasıtlı bir tasarım kararıdır. 4 anlam tipi, 2 buton düzeni ve 1–3 buton segmentiyle özelleştirilebilir; Blazor tarafında ${tk('Type')}, ${tk('ButtonPosition')} ve ${tk('Segments')} prop'larıyla yönetilir.</p>
+
+      <h2 id="Anatomy">Anatomy</h2>
+      <p class="page-desc">Alert Dialog dikey bir flex kolondur: ikon + metni yatay ve dikey ortalayan ${tk('.bt-adlg__body')}, altında bir üst kenarlıkla ayrılan ${tk('.bt-adlg__footer')}. Konteyner (${tk('.bt-adlg')}) 420px sabit genişlik, ${tk('--bt-radius-md')} köşe ve ${tk('--bt-shadow-md')} gölge taşır; ${tk('overflow: hidden')} footer kenarlığının köşeye taşmasını engeller. Type modifier'ı (${tk('.bt-adlg--{type}')}) yalnızca ikon badge rengini ve Confirm buton class'ını, position modifier'ı (${tk('.bt-adlg--vertical')} / ${tk('.bt-adlg--horizontal')}) yalnızca footer eksenini değiştirir — gövde geometrisi her kombinasyonda aynıdır. Blazor karşılığı ${tk('.bt-adlg')} sınıf ailesidir.</p>
+      <table class="token-table" style="margin-top:12px">
+        <thead><tr><th>Katman</th><th>Class</th><th>Rol</th></tr></thead>
+        <tbody>
+          <tr><td>Konteyner</td><td>${tk('.bt-adlg')}</td><td>420px sabit genişlik, ${tk('--bt-radius-md')} köşe, ${tk('--bt-shadow-md')} gölge, dikey flex kolon</td></tr>
+          <tr><td>Body</td><td>${tk('.bt-adlg__body')}</td><td>İkon + metni istifler ve ortalar; ${tk('--bt-space-3xl')} (20px) padding, ${tk('--bt-space-md')} (8px) gap</td></tr>
+          <tr><td>İkon badge</td><td>${tk('.bt-adlg__icon-wrap')} › ${tk('.bt-icon')}</td><td>32×32 yuvarlak renkli badge; içinde global ${tk('.bt-icon')} (24×24 wrapper, SVG 16×16). Zemin + renk tipe göre</td></tr>
+          <tr><td>Metin</td><td>${tk('.bt-adlg__text')}</td><td>${tk('.bt-adlg__title')} (${tk('--bt-title-sm-medium')}) + ${tk('.bt-adlg__desc')} (${tk('--bt-text-xs-regular')}); ${tk('--bt-space-xs')} (4px) gap, ortalı</td></tr>
+          <tr><td>Footer</td><td>${tk('.bt-adlg__footer')}</td><td>${tk('--bt-border-primary-muted')} üst kenarlık, ${tk('--bt-space-xl')} / ${tk('--bt-space-2xl')} padding, ${tk('--bt-space-md')} gap; eksen position modifier'ına bağlı</td></tr>
+          <tr><td>Butonlar</td><td>${tk('.bt-btn')}</td><td>Reuse edilen Button component'i — Confirm ${tk('bt-btn--{type}-solid')}, Cancel/üçüncül ${tk('bt-btn--base-flat')}, hepsi ${tk('bt-btn--sm')}</td></tr>
+        </tbody>
+      </table>
 
       <h2 id="Types">Types</h2>
       <p class="page-desc">Dört anlamsal tip — Information, Success, Warning, Error — ikon arka plan ve renk token'larını otomatik olarak değiştirir. Her tip, kullanıcıya mesajın duygusal ağırlığını ileten farklı bir semantik renk paleti kullanır; tasarım sistemi bu renkleri merkezi olarak yönetir, geliştiricinin ayrıca stil yazması gerekmez. Blazor'da ${tk('Type')} prop'unun değiştirilmesi ikon setini ve buton rengini birlikte günceller.</p>
@@ -7226,7 +7326,7 @@ PAGES_WEB['components/alert-dialog'] = {
         </tbody>
       </table>
       <h3>Anatomy</h3>
-      <p class="page-desc">Her tipin ikon alanı 32×32px yuvarlak (${tk('--bt-radius-full')}) bir kutudur; arka plan rengi tipe özgü ${tk('--bt-*-subtle')} token'ından, ikon rengi ise ${tk('--bt-icon-*-default')} token'ından gelir. Başlık ${tk('--bt-title-sm-medium')} (500 · 14px/20px) tipografisini, açıklama ${tk('--bt-text-xs-regular')} (400 · 12px/16px) tipografisini kullanır.</p>
+      <p class="page-desc">Her tipin ikon alanı 32×32px yuvarlak (${tk('--bt-radius-full')}) bir badge'dir; içindeki ikon global ${tk('.bt-icon')} wrapper'ıyla (24×24, SVG 16×16) ortalanır. Arka plan rengi tipe özgü ${tk('--bt-*-subtle')} token'ından, ikon rengi ise ${tk('--bt-icon-*-default')} token'ından gelir — badge'e verilen ${tk('color')}, ikonun ${tk('currentColor')} stroke'una miras kalır. Başlık ${tk('--bt-title-sm-medium')} (500 · 14px/16px) tipografisini, açıklama ${tk('--bt-text-xs-regular')} (400 · 12px/16px) tipografisini kullanır.</p>
       <table class="token-table" style="margin-top:12px">
         <thead><tr><th>Element</th><th>Property</th><th>Token</th><th>Value</th></tr></thead>
         <tbody>
@@ -7238,11 +7338,27 @@ PAGES_WEB['components/alert-dialog'] = {
           <tr><td>Icon · Success</td><td>Color</td><td>${tk('--bt-icon-success-default')}</td><td>#2d584b</td></tr>
           <tr><td>Icon · Warning</td><td>Color</td><td>${tk('--bt-icon-warning-default')}</td><td>#aa820a</td></tr>
           <tr><td>Icon · Error</td><td>Color</td><td>${tk('--bt-icon-error-default')}</td><td>#b31d38</td></tr>
-          <tr><td>Title</td><td>Font</td><td>${tk('--bt-title-sm-medium')}</td><td>500 · 14px / 20px</td></tr>
+          <tr><td>Title</td><td>Font</td><td>${tk('--bt-title-sm-medium')}</td><td>500 · 14px / 16px</td></tr>
           <tr><td>Title / Description</td><td>Color</td><td>${tk('--bt-text-primary-default')}</td><td>#1a1a1a</td></tr>
           <tr><td>Description</td><td>Font</td><td>${tk('--bt-text-xs-regular')}</td><td>400 · 12px / 16px</td></tr>
         </tbody>
       </table>
+
+      <h2 id="Information">Information</h2>
+      <p class="page-desc">Nötr bilgilendirme veya bağlam açıklaması için — kullanıcıdan yıkıcı bir karar istemez, yalnızca bir durumu bildirir. İkon badge'i ${tk('--bt-primary-subtle')} zemin + ${tk('--bt-icon-information-default')} (circle-info) ikonla, Confirm butonu ${tk('bt-btn--primary-solid')} ile marka mavisi tonundadır; "devam et" hissi verir. ${tk('.bt-adlg--information')} modifier'ı bu renk setini tek satırda uygular — Blazor'da ${tk('Type=Information')}. Aşağıdaki playground bu tipe kilitli; Button Position ve Segments serbest.</p>
+      ${adlgTypeSection('information')}
+
+      <h2 id="Success">Success</h2>
+      <p class="page-desc">Başarıyla tamamlanan bir eylemin teyidi için — kayıt oluşturuldu, işlem gönderildi gibi olumlu sonuçlar. İkon badge'i ${tk('--bt-success-subtle')} zemin + ${tk('--bt-icon-success-default')} (circle-check) ikon, Confirm butonu ${tk('bt-btn--success-solid')} yeşil tonda; sonucu pekiştirir. Genelde tek buton (Segments=1) yeterlidir — ${tk('.bt-adlg--success')}, Blazor'da ${tk('Type=Success')}.</p>
+      ${adlgTypeSection('success')}
+
+      <h2 id="Warning">Warning</h2>
+      <p class="page-desc">Geri alınabilir ama dikkat gerektiren bir seçim öncesi — kullanıcıyı durdurup onaylatır (örn. kaydedilmemiş değişiklikten çıkış). İkon badge'i ${tk('--bt-warning-subtle')} zemin + ${tk('--bt-icon-warning-default')} (triangle-alert) ikon, Confirm butonu ${tk('bt-btn--warning-solid')} amber tonda; dikkat çeker ama alarm vermez. Genelde Segments=2 (Cancel + devam) ile — ${tk('.bt-adlg--warning')}, Blazor'da ${tk('Type=Warning')}.</p>
+      ${adlgTypeSection('warning')}
+
+      <h2 id="Error">Error</h2>
+      <p class="page-desc">Yıkıcı eylemlerin (kalıcı silme, kaldırma) son onayı veya bir hata durumunun bildirimi için — sonuç geri alınamaz. İkon badge'i ${tk('--bt-error-subtle')} zemin + ${tk('--bt-icon-error-default')} (circle-alert) ikon, Confirm butonu ${tk('bt-btn--error-solid')} kırmızı tonda; geri dönüşü olmayan sonucu vurgular. Her zaman bir Cancel seçeneği sun (Segments≥2) — ${tk('.bt-adlg--error')}, Blazor'da ${tk('Type=Error')}.</p>
+      ${adlgTypeSection('error')}
 
       <h2 id="Button Layout">Button Layout</h2>
       <p class="page-desc">Footer, Horizontal ve Vertical olmak üzere iki buton düzeni sunar; segment sayısı 1–3 arasında seçilebilir. Horizontal düzende butonlar sağa hizalanır ve 80px sabit genişlik alır, Vertical düzende ise tam genişlikte üst üste dizilir. Confirm butonu ${tk('bt-btn--*-solid')} (tipe göre değişir), Cancel butonu ${tk('bt-btn--base-flat')} class'ını kullanır.</p>
@@ -7299,6 +7415,28 @@ PAGES_WEB['components/alert-dialog'] = {
           <tr><td>Cancel / secondary</td><td>Class</td><td>—</td><td>${tk('bt-btn--base-flat')}</td></tr>
         </tbody>
       </table>
+
+      <h2 id="Horizontal">Horizontal</h2>
+      <p class="page-desc">Varsayılan buton düzeni: butonlar footer'ın sağına hizalanır ve her biri 80px sabit genişlik alır — ghost(lar) solda, Confirm en sağda. Masaüstü onay diyaloglarında ve kısa buton metinlerinde ("Onayla" / "İptal") tercih edilir; sabit genişlik butonları hizalı ve öngörülebilir tutar. ${tk('.bt-adlg--horizontal')} modifier'ı footer'a ${tk('justify-content: flex-end')}, ${tk('.bt-adlg--horizontal .bt-adlg__footer .bt-btn')} ise ${tk('width: 80px')} uygular. Aşağıdaki playground position=Horizontal'a kilitli; Type ve Segments serbest.</p>
+      ${adlgLockedPg({
+        id: 'pgd-alert-dialog-horizontal-sec',
+        lockKey: 'horizontal', lockLabel: 'Horizontal', fixed: { position: 'horizontal' },
+        props: [
+          { key: 'type',     label: 'Type',            options: ADLG_TYPE_OPTS, default: 'information' },
+          { key: 'segments', label: 'Button Segments', options: ADLG_SEG_OPTS,  default: '2' },
+        ],
+      })}
+
+      <h2 id="Vertical">Vertical</h2>
+      <p class="page-desc">Varsayılan Horizontal düzenin alternatifi: butonlar tam genişlikte üst üste dizilir — Confirm en üstte, Cancel/üçüncül seçenek altında. Dar veya dokunmatik onay ekranlarında ve buton metinleri 80px'e sığmayacak kadar uzunsa tercih edilir. ${tk('.bt-adlg--vertical')} modifier'ı footer'a ${tk('flex-direction: column')} verir; Segments≥2'de butonlar ${tk('align-items: flex-end')} ile sağa toplanır, Segments=1'de ${tk('justify-content: center')} ile ortalanır. Aşağıdaki playground position=Vertical'a kilitli; Type ve Segments serbest.</p>
+      ${adlgLockedPg({
+        id: 'pgd-alert-dialog-vertical-sec',
+        lockKey: 'vertical', lockLabel: 'Vertical', fixed: { position: 'vertical' },
+        props: [
+          { key: 'type',     label: 'Type',            options: ADLG_TYPE_OPTS, default: 'information' },
+          { key: 'segments', label: 'Button Segments', options: ADLG_SEG_OPTS,  default: '2' },
+        ],
+      })}
     `};
   },
 };
@@ -7497,11 +7635,39 @@ function dialogCss(variant, props) {
 }
 
 PAGES_WEB['components/dialog'] = {
-  tabs: ['Overview', 'CSS Properties', 'Usage'],
-  toc:  ['Header Types', 'Subtitle', 'Button Layout'],
+  tabs: ['Overview', 'Examples', 'CSS Properties', 'Usage'],
+  toc:  ['Anatomy', 'Header Types', 'Left', 'Center', 'Subtitle', 'Button Layout', 'Horizontal', 'Vertical'],
   render(tab) {
     const title = 'Dialog';
     const tk = v => `<code style="font-size:12px;font-family:var(--mono)">${v}</code>`;
+
+    // Prop tanımları — hem master hem per-değer kilitli playground'lar reuse eder.
+    const P_HEADER   = { key: 'headerType',   label: 'Header Type',     options: DIALOG_HEADER_OPTS,   default: 'left' };
+    const P_SUBTITLE = { key: 'subtitle',     label: 'Header Subtitle', options: DIALOG_SUBTITLE_OPTS, default: 'off' };
+    const P_LEFTCTL  = { key: 'leftControl',  label: 'Left Control',    options: TBX_BOOL_OPTS,        default: 'on' };
+    const P_RIGHTCTL = { key: 'rightControl', label: 'Right Control',   options: TBX_BOOL_OPTS,        default: 'on' };
+    const P_BTNPOS   = { key: 'btnPos',       label: 'Button Position', options: DIALOG_POS_OPTS,      default: 'horizontal' };
+    const P_SEGMENTS = { key: 'segments',     label: 'Button Segments', options: DIALOG_SEG_OPTS,      default: '2' };
+
+    // Bir ekseni (Header Type veya Button Position) sabitleyip diğerlerini
+    // serbest bırakan kilitli playground — Alert Dialog'daki adlgLockedPg deseni.
+    const dlgLockedPg = (cfg) => registerPlayground({
+      id: cfg.id,
+      variants: [{ key: cfg.lockKey, label: cfg.lockLabel }],
+      trigger: { label: 'Click Me', modal: true },
+      props: cfg.props,
+      preview: (v, p) => `<div style="display:flex;align-items:center;justify-content:center;padding:24px;">${dialogHtml(v, { ...p, ...cfg.fixed })}</div>`,
+      code:    (v, p) => dialogHtml(v, { ...p, ...cfg.fixed }),
+      css:     (v, p) => dialogCss(v, { ...p, ...cfg.fixed }),
+    });
+
+    // Examples'ta tekrar eden statik önizleme tablosu — bir ekseni sabitler,
+    // ikinci bir eksen boyunca canlı dialogHtml satırları üretir.
+    const dlgExTable = (headCols, rows) => `
+      <table class="token-table">
+        <thead><tr>${headCols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>`;
 
     if (tab === 'CSS Properties') return { title, html: `
       <p class="page-desc">Dialog bileşeni için kullanılan design token–CSS değişken eşleşmeleri.</p>
@@ -7533,6 +7699,8 @@ PAGES_WEB['components/dialog'] = {
           <tr><td>Button · Vertical</td><td>Width</td><td>—</td><td>100% (full)</td></tr>
           <tr><td>Primary button</td><td>Class</td><td>—</td><td>${tk('bt-btn--sm bt-btn--primary-solid')}</td></tr>
           <tr><td>Secondary button</td><td>Class</td><td>—</td><td>${tk('bt-btn--sm bt-btn--base-flat')}</td></tr>
+          <tr><td>Overlay (backdrop)</td><td>Background</td><td>—</td><td>rgba(0,0,0,0.4)</td></tr>
+          <tr><td>Overlay (backdrop)</td><td>Backdrop-filter</td><td>—</td><td>blur(4px) — Overlays grubu ortak backdrop'u (Alert Dialog / Drawer ile aynı)</td></tr>
         </tbody>
       </table>
     `};
@@ -7555,28 +7723,95 @@ PAGES_WEB['components/dialog'] = {
       </ul>
     `};
 
+    if (tab === 'Examples') return { title, html: `
+      <h2 id="Header Types">Header Types</h2>
+      <p class="page-desc">Header, başlığın hizasını ve sol slotun içeriğini belirleyen iki tipte gelir. ${tk('Left')} başlığı sola yaslar, sol kontrol slotunu boş bırakır — çoğu görev diyaloğu için standart. ${tk('Center')} sol 40×40 slota bir ikon wrapper yerleştirir ve başlığı ortalar — özel bir ikonla öne çıkarılan içerik için. CSS'te ${tk('.bt-dialog--left')} / ${tk('.bt-dialog--center')} modifier'ı; Left tipinde header'a ${tk('--bt-space-xl')} sol iç boşluk eklenir (icon slotu olmadığı için başlığın kendi inset'i gerekir).</p>
+      ${dlgExTable(['Type', 'Preview'], [
+        ['<span class="token-name">Left</span>',   dialogHtml('default', { headerType: 'left',   subtitle: 'off', btnPos: 'horizontal', segments: '2' })],
+        ['<span class="token-name">Center</span>', dialogHtml('default', { headerType: 'center', subtitle: 'off', btnPos: 'horizontal', segments: '2' })],
+      ])}
+
+      <h2 id="Left">Left</h2>
+      <p class="page-desc">Varsayılan header tipi: başlık (ve varsa subtitle) sola yaslı, sağ üstte kapatma kontrolü, sol slot boş. Sol kontrol slotu render edilmediği için ${tk('.bt-dialog__header')}'a ${tk('--bt-space-xl')} (12px) sol iç boşluk uygulanır; böylece başlık header'ın gerçek kenarına yapışmaz. Aşağıda Subtitle On/Off ile iki hâli.</p>
+      ${dlgExTable(['Subtitle', 'Preview'], [
+        ['Off', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'horizontal', segments: '2' })],
+        ['On',  dialogHtml('default', { headerType: 'left', subtitle: 'on',  btnPos: 'horizontal', segments: '2' })],
+      ])}
+
+      <h2 id="Center">Center</h2>
+      <p class="page-desc">Sol 40×40 slota bir 24×24 ikon wrapper (${tk('.bt-dialog__icon-wrap')}, içinde 16×16 ikon) yerleştirilir ve başlık ${tk('text-align: center')} ile ortalanır — özel bir görsel vurgu gerektiren onay/bilgi diyalogları için. Left Control = Off seçilirse ikon slotu tamamen kaldırılır (başlık yine ortalı kalır). Aşağıda Subtitle On/Off ile iki hâli.</p>
+      ${dlgExTable(['Subtitle', 'Preview'], [
+        ['Off', dialogHtml('default', { headerType: 'center', subtitle: 'off', btnPos: 'horizontal', segments: '2' })],
+        ['On',  dialogHtml('default', { headerType: 'center', subtitle: 'on',  btnPos: 'horizontal', segments: '2' })],
+      ])}
+
+      <h2 id="Subtitle">Subtitle</h2>
+      <p class="page-desc">Başlığın hemen altında, ${tk('--bt-text-xs-regular')} (400 · 12px/16px) fontu ve ${tk('--bt-text-primary-emphasis')} (#727272) soluk rengiyle ikincil bir bağlam satırı gösterir — diyaloğun kapsamını veya kaynağını netleştirmek için. Varsayılan Off; On olduğunda ${tk('.bt-dialog__subtitle')} elemanı title-wrap'e eklenir, header yüksekliği içeriğe göre büyür. Her iki header tipiyle birlikte çalışır.</p>
+      ${dlgExTable(['State', 'Preview'], [
+        ['Off', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'horizontal', segments: '2' })],
+        ['On',  dialogHtml('default', { headerType: 'left', subtitle: 'on',  btnPos: 'horizontal', segments: '2' })],
+      ])}
+
+      <h2 id="Button Layout">Button Layout</h2>
+      <p class="page-desc">Footer iki düzen ve 1–3 segment sayısını destekler. Horizontal düzende butonlar sağa hizalanır ve her biri 80px sabit genişlik alır (ghost'lar solda, primary sağda); Vertical düzende butonlar tam genişlikte üst üste dizilir (primary üstte). Segment sayısı birincil eylem + geri adım + üçüncül seçenek dengesini belirler. CSS'te ${tk('.bt-dialog--horizontal')} / ${tk('.bt-dialog--vertical')} modifier'ı footer eksenini ve buton genişliğini değiştirir.</p>
+      ${dlgExTable(['Position', 'Segments', 'Preview'], [
+        ['<span class="token-name">Horizontal</span>', '1', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'horizontal', segments: '1' })],
+        ['<span class="token-name">Horizontal</span>', '2', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'horizontal', segments: '2' })],
+        ['<span class="token-name">Horizontal</span>', '3', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'horizontal', segments: '3' })],
+        ['<span class="token-name">Vertical</span>',   '1', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'vertical',   segments: '1' })],
+        ['<span class="token-name">Vertical</span>',   '2', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'vertical',   segments: '2' })],
+        ['<span class="token-name">Vertical</span>',   '3', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'vertical',   segments: '3' })],
+      ])}
+
+      <h2 id="Horizontal">Horizontal</h2>
+      <p class="page-desc">Varsayılan buton düzeni: butonlar footer'ın sağına hizalanır, her biri 80px sabit genişlik alır — ghost'lar solda, primary en sağda. Masaüstü diyaloglarında ve kısa buton metinlerinde tercih edilir; sabit genişlik hizalı ve öngörülebilir bir footer verir. ${tk('.bt-dialog--horizontal .bt-dialog__footer')} ${tk('justify-content: flex-end')}, içindeki ${tk('.bt-btn')}'ler ${tk('width: 80px')}. Aşağıda üç segment sayısı.</p>
+      ${dlgExTable(['Segments', 'Preview'], [
+        ['1', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'horizontal', segments: '1' })],
+        ['2', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'horizontal', segments: '2' })],
+        ['3', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'horizontal', segments: '3' })],
+      ])}
+
+      <h2 id="Vertical">Vertical</h2>
+      <p class="page-desc">Varsayılan-olmayan buton düzeni: butonlar tam genişlikte üst üste dizilir — primary en üstte, ghost'lar altında. Dar/dokunmatik yüzeylerde ve buton metinleri 80px'e sığmayacak kadar uzunsa tercih edilir. ${tk('.bt-dialog--vertical .bt-dialog__footer')} ${tk('flex-direction: column')}, içindeki ${tk('.bt-btn')}'ler ${tk('width: 100%')}. Aşağıda üç segment sayısı.</p>
+      ${dlgExTable(['Segments', 'Preview'], [
+        ['1', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'vertical', segments: '1' })],
+        ['2', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'vertical', segments: '2' })],
+        ['3', dialogHtml('default', { headerType: 'left', subtitle: 'off', btnPos: 'vertical', segments: '3' })],
+      ])}
+    `};
+
     // Overview
     return { title, html: `
       ${registerPlayground({
         id: 'pgd-dialog-overview',
         variants: [{ key: 'default', label: 'Dialog' }],
         trigger: { label: 'Click Me', modal: true },
-        props: [
-          { key: 'headerType',   label: 'Header Type',     options: DIALOG_HEADER_OPTS,   default: 'left' },
-          { key: 'subtitle',     label: 'Header Subtitle', options: DIALOG_SUBTITLE_OPTS, default: 'off' },
-          { key: 'leftControl',  label: 'Left Control',    options: TBX_BOOL_OPTS,        default: 'on' },
-          { key: 'rightControl', label: 'Right Control',   options: TBX_BOOL_OPTS,        default: 'on' },
-          { key: 'btnPos',       label: 'Button Position', options: DIALOG_POS_OPTS,      default: 'horizontal' },
-          { key: 'segments',     label: 'Button Segments', options: DIALOG_SEG_OPTS,      default: '2' },
-        ],
+        props: [P_HEADER, P_SUBTITLE, P_LEFTCTL, P_RIGHTCTL, P_BTNPOS, P_SEGMENTS],
         preview: (v, p) => `<div style="display:flex;align-items:center;justify-content:center;padding:24px;">${dialogHtml(v, p)}</div>`,
         code:    (v, p) => dialogHtml(v, p),
         css:     (v, p) => dialogCss(v, p),
       })}
 
-      <p class="page-desc">Dialog, kullanıcıdan etkileşim gerektiren görevler veya ayrıntılı bilgi sunumu için kullanılan modal bir penceredir. Alert Dialog'un aksine form alanları, açıklamalar ve daha zengin içerik barındırabilir.</p>
+      <p class="page-desc">Dialog, kullanıcıdan etkileşim gerektiren görevler veya ayrıntılı bilgi sunumu için kullanılan, arka plan etkileşimini bloklayan modal bir penceredir. Alert Dialog'un aksine yapılandırılmış bir header (başlık + opsiyonel subtitle + sol/sağ 40×40 kontrol slotları), form alanları ve zengin içerik barındırabilen bir body ve 1–3 butonlu bir footer taşır — üçü ${tk('.bt-dialog__header')} / ${tk('.bt-dialog__body')} / ${tk('.bt-dialog__footer')} olarak sabit dikey bir flex kolonda dizilir. Header Type (Left / Center) başlığın hizasını ve sol slotu, Button Position (Horizontal / Vertical) footer eksenini değiştirir; Subtitle, Left/Right Control opsiyonel parçalardır. Blazor/Telerik'te ${tk('TelerikWindow')} bileşeniyle uygulanır.</p>
+
+      <h2 id="Anatomy">Anatomy</h2>
+      <p class="page-desc">Dialog, ${tk('overflow: hidden')} bir konteyner (${tk('.bt-dialog')}, 420px sabit genişlik, ${tk('--bt-radius-md')} köşe) içinde üç yatay katmandır. Header 40px minimum yükseklikte ${tk('--bt-base-subtle')} zeminli, ${tk('--bt-border-primary-muted')} alt kenarlıklı bir bar; sol ve sağ 40×40 slotlar yalnızca layout'tur — sağdaki her zaman reuse edilen bir ${tk('bt-btn--icon')} (28×28) kapatma butonu taşır, soldaki yalnızca Center tipinde 24×24 ikon wrapper içinde 16×16 ikon gösterir. Body ${tk('--bt-space-2xl')} padding + gap ile içerik öğelerini (metin, form) istifler; Footer ${tk('--bt-border-primary-muted')} üst kenarlıkla ayrılır ve gerçek ${tk('.bt-btn')} bileşenlerini reuse eder. Header Type ve Button Position modifier'ları yalnızca ilgili katmanı etkiler — konteyner geometrisi her kombinasyonda sabittir.</p>
+      <table class="token-table" style="margin-top:12px">
+        <thead><tr><th>Katman</th><th>Class</th><th>Rol</th></tr></thead>
+        <tbody>
+          <tr><td>Konteyner</td><td>${tk('.bt-dialog')}</td><td>420px sabit genişlik, ${tk('--bt-radius-md')} köşe, ${tk('--bt-base-default')} zemin, ${tk('overflow: hidden')}, dikey flex kolon</td></tr>
+          <tr><td>Header</td><td>${tk('.bt-dialog__header')}</td><td>40px min-height, ${tk('--bt-base-subtle')} zemin, ${tk('--bt-border-primary-muted')} alt kenarlık; Left tipinde ${tk('--bt-space-xl')} sol iç boşluk</td></tr>
+          <tr><td>Kontrol slotu (sol / sağ)</td><td>${tk('.bt-dialog__icon-slot')} / ${tk('.bt-dialog__control')}</td><td>40×40, yalnızca layout. Sağ: reuse ${tk('bt-btn--sm bt-btn--base-flat bt-btn--icon')} (28×28). Sol: yalnız Center tipinde render</td></tr>
+          <tr><td>İkon wrapper (Center)</td><td>${tk('.bt-dialog__icon-wrap')}</td><td>24×24 wrapper, içinde 16×16 ikon (ortalı, wrapper'ı doldurmaz)</td></tr>
+          <tr><td>Başlık</td><td>${tk('.bt-dialog__title')} + ${tk('.bt-dialog__subtitle')}</td><td>Title ${tk('--bt-title-sm-medium')} (500 · 14px/16px); Subtitle opsiyonel, ${tk('--bt-text-xs-regular')} + ${tk('--bt-text-primary-emphasis')}</td></tr>
+          <tr><td>Body</td><td>${tk('.bt-dialog__body')}</td><td>${tk('--bt-space-2xl')} (16px) padding + gap; metin, form alanları, upload vb. barındırır</td></tr>
+          <tr><td>Footer</td><td>${tk('.bt-dialog__footer')}</td><td>${tk('--bt-border-primary-muted')} üst kenarlık, ${tk('--bt-space-xl')}/${tk('--bt-space-2xl')} padding, ${tk('--bt-space-md')} gap; eksen Button Position'a bağlı</td></tr>
+          <tr><td>Butonlar</td><td>${tk('.bt-btn')}</td><td>Reuse edilen Button — primary ${tk('bt-btn--primary-solid')}, diğerleri ${tk('bt-btn--base-flat')}, hepsi ${tk('bt-btn--sm')}</td></tr>
+        </tbody>
+      </table>
 
       <h2 id="Header Types">Header Types</h2>
+      <p class="page-desc">Header, başlığın hizasını ve sol 40×40 slotun içeriğini belirleyen iki tipte gelir; bu, diyaloğun görsel kimliğini en çok değiştiren eksendir. ${tk('Left')} (varsayılan) başlığı sola yaslar ve sol slotu boş bırakır — çoğu görev diyaloğu için standart; icon slotu olmadığı için header'a ${tk('--bt-space-xl')} sol iç boşluk eklenir. ${tk('Center')} sol slota bir 24×24 ikon wrapper yerleştirir ve başlığı ${tk('text-align: center')} ile ortalar — özel bir ikonla vurgulanan onay/bilgi diyalogları için. CSS'te ${tk('.bt-dialog--left')} / ${tk('.bt-dialog--center')} modifier'ı; sağ kapatma kontrolü her iki tipte de sabittir.</p>
       <table class="token-table">
         <thead><tr><th>Type</th><th>Preview</th><th>Açıklama</th></tr></thead>
         <tbody>
@@ -7592,9 +7827,8 @@ PAGES_WEB['components/dialog'] = {
           </tr>
         </tbody>
       </table>
-
-      <h2>Anatomy</h2>
-      <p class="page-desc">Dialog konteynerinin boyut, arka plan ve header öğelerine ait token'ları listeler. Konteyner 420px genişlikte ${tk('--bt-base-default')} beyaz arka plan ve ${tk('--bt-radius-md')} köşe yuvarlamasıyla gösterilir; header 40px minimum yükseklikte ${tk('--bt-base-subtle')} açık gri arka plan ve ${tk('--bt-border-primary-muted')} alt kenarlık alır. Sol ve sağ kontrol slotları 40×40px boyutunda; Center tipinde ikon slotu 24×24px wrapper içinde 16×16px ikon barındırır. Blazor/Telerik'te ${tk('TelerikWindow')} bileşeniyle uygulanır.</p>
+      <h3>Anatomy</h3>
+      <p class="page-desc">Header katmanının boyut, zemin ve slot token'larını listeler. Header 40px min-height, ${tk('--bt-base-subtle')} zemin ve ${tk('--bt-border-primary-muted')} alt kenarlıkla body'den ayrılır; iç boşluk ${tk('--bt-space-none')}'dır, yalnızca Left tipinde ${tk('--bt-space-xl')} sol boşluk eklenir. Sol/sağ kontrol slotları 40×40 (yalnız layout), Center ikon slotu 24×24 wrapper içinde 16×16 ikon barındırır.</p>
       <table class="token-table" style="margin-top:12px">
         <thead><tr><th>Element</th><th>Property</th><th>Token</th><th>Value</th></tr></thead>
         <tbody>
@@ -7614,7 +7848,24 @@ PAGES_WEB['components/dialog'] = {
         </tbody>
       </table>
 
+      <h2 id="Left">Left</h2>
+      <p class="page-desc">Varsayılan header tipi: başlık ve (varsa) subtitle sola yaslı, sağ üstte kapatma kontrolü, sol slot render edilmez. Sol icon slotu olmadığı için ${tk('.bt-dialog--left .bt-dialog__header')}'a ${tk('padding-left: var(--bt-space-xl)')} (12px) uygulanır — başlık header'ın gerçek kenarına yapışmasın diye. Aşağıdaki playground Header Type=Left'e kilitli; Subtitle, Right Control, Button Position ve Segments serbest.</p>
+      ${dlgLockedPg({
+        id: 'pgd-dialog-left-sec',
+        lockKey: 'left', lockLabel: 'Left', fixed: { headerType: 'left' },
+        props: [P_SUBTITLE, P_RIGHTCTL, P_BTNPOS, P_SEGMENTS],
+      })}
+
+      <h2 id="Center">Center</h2>
+      <p class="page-desc">Sol 40×40 slota bir 24×24 ikon wrapper (${tk('.bt-dialog__icon-wrap')}, içinde 16×16 ikon — wrapper'ı doldurmaz, ortalanır) yerleştirilir ve başlık ${tk('text-align: center')} ile ortalanır. Özel bir görsel vurgu gerektiren onay/bilgi diyalogları için. ${tk('Left Control = Off')} seçilirse ikon slotu tamamen kaldırılır, başlık yine ortalı kalır. Aşağıdaki playground Header Type=Center'a kilitli; Left/Right Control, Subtitle, Button Position ve Segments serbest.</p>
+      ${dlgLockedPg({
+        id: 'pgd-dialog-center-sec',
+        lockKey: 'center', lockLabel: 'Center', fixed: { headerType: 'center' },
+        props: [P_SUBTITLE, P_LEFTCTL, P_RIGHTCTL, P_BTNPOS, P_SEGMENTS],
+      })}
+
       <h2 id="Subtitle">Subtitle</h2>
+      <p class="page-desc">Başlığın hemen altında ikincil bir bağlam satırı gösterir — diyaloğun kapsamını, kaynağını veya bir uyarıyı netleştirmek için. Varsayılan Off; On olduğunda ${tk('.bt-dialog__subtitle')} elemanı title-wrap'e eklenir (${tk('--bt-text-xs-regular')} · 400 12px/16px, ${tk('--bt-text-primary-emphasis')} #727272) ve header yüksekliği içeriğe göre büyür. Her iki header tipiyle (Left / Center) birlikte çalışır; playground'da ${tk('Header Subtitle')} prop'u (On/Off) ile yönetilir.</p>
       <table class="token-table">
         <thead><tr><th>State</th><th>Açıklama</th></tr></thead>
         <tbody>
@@ -7622,8 +7873,7 @@ PAGES_WEB['components/dialog'] = {
           <tr><td><strong>On</strong></td><td>Başlığın altında ek açıklama metni görüntülenir.</td></tr>
         </tbody>
       </table>
-
-      <h2>Anatomy</h2>
+      <h3>Anatomy</h3>
       <p class="page-desc">Subtitle ve Body alanının tipografi ve spacing token'larını listeler. Subtitle ${tk('--bt-text-xs-regular')} fontu ve ${tk('--bt-text-primary-emphasis')} soluk rengiyle başlığın altında ikincil bilgi sunar; Body ${tk('--bt-space-2xl')} padding ve aynı gap değeriyle içerik öğelerini düzenler. Blazor/Telerik'te ${tk('TelerikWindow')} bileşeninin header subtitle ve body template'iyle uygulanır.</p>
       <table class="token-table" style="margin-top:12px">
         <thead><tr><th>Element</th><th>Property</th><th>Token</th><th>Value</th></tr></thead>
@@ -7632,10 +7882,13 @@ PAGES_WEB['components/dialog'] = {
           <tr><td>Subtitle</td><td>Color</td><td>${tk('--bt-text-primary-emphasis')}</td><td>#727272</td></tr>
           <tr><td>Body</td><td>Padding</td><td>${tk('--bt-space-2xl')}</td><td>16px</td></tr>
           <tr><td>Body</td><td>Gap</td><td>${tk('--bt-space-2xl')}</td><td>16px</td></tr>
+          <tr><td>Body text</td><td>Font</td><td>${tk('--bt-text-xs-regular')}</td><td>400 12px/16px</td></tr>
+          <tr><td>Body text</td><td>Color</td><td>${tk('--bt-text-primary-default')}</td><td>#1a1a1a</td></tr>
         </tbody>
       </table>
 
       <h2 id="Button Layout">Button Layout</h2>
+      <p class="page-desc">Footer, iki buton düzeni ve 1–3 arası segment sayısını destekler; bu, footer'ın yerleşim eksenini belirleyen Layout eksenidir. Horizontal düzende butonlar sağa hizalanır ve her biri 80px sabit genişlik alır (ghost'lar solda, primary sağda); Vertical düzende butonlar tam genişlikte üst üste dizilir (primary üstte). Segment sayısı birincil eylem + geri adım + üçüncül seçenek dengesini belirler. CSS'te ${tk('.bt-dialog--horizontal')} / ${tk('.bt-dialog--vertical')} modifier'ı footer eksenini ve buton genişliğini değiştirir.</p>
       <table class="token-table">
         <thead><tr><th>Position</th><th>Segments</th><th>Düzen</th></tr></thead>
         <tbody>
@@ -7647,8 +7900,7 @@ PAGES_WEB['components/dialog'] = {
           <tr><td>Vertical</td><td>3</td><td>Confirm + Cancel + Skip, tam genişlik</td></tr>
         </tbody>
       </table>
-
-      <h2>Anatomy</h2>
+      <h3>Anatomy</h3>
       <p class="page-desc">Footer bölümünün kenarlık, spacing ve buton düzeni token'larını listeler. Footer ${tk('--bt-border-primary-muted')} üst kenarlıkla body'den ayrılır; butonlar horizontal düzende 80px sabit genişlikte, vertical düzende tam genişlikte konumlandırılır. Primary buton ${tk('bt-btn--sm bt-btn--primary-solid')}, secondary buton ${tk('bt-btn--sm bt-btn--base-flat')} sınıflarıyla gerçek buton bileşenini yeniden kullanır. Blazor/Telerik'te ${tk('TelerikWindow')} bileşeninin footer template'iyle uygulanır.</p>
       <table class="token-table" style="margin-top:12px">
         <thead><tr><th>Element</th><th>Property</th><th>Token</th><th>Value</th></tr></thead>
@@ -7663,6 +7915,22 @@ PAGES_WEB['components/dialog'] = {
           <tr><td>Secondary button</td><td>Class</td><td>—</td><td>${tk('bt-btn--sm bt-btn--base-flat')}</td></tr>
         </tbody>
       </table>
+
+      <h2 id="Horizontal">Horizontal</h2>
+      <p class="page-desc">Varsayılan buton düzeni: butonlar footer'ın sağına hizalanır, her biri 80px sabit genişlik alır — ghost'lar solda, primary en sağda. Masaüstü diyaloglarında ve kısa buton metinlerinde tercih edilir; sabit genişlik hizalı ve öngörülebilir bir footer verir. ${tk('.bt-dialog--horizontal .bt-dialog__footer')} ${tk('justify-content: flex-end')}, içindeki ${tk('.bt-btn')}'ler ${tk('width: 80px')}. Aşağıdaki playground Button Position=Horizontal'a kilitli; Header Type, Subtitle, kontroller ve Segments serbest.</p>
+      ${dlgLockedPg({
+        id: 'pgd-dialog-horizontal-sec',
+        lockKey: 'horizontal', lockLabel: 'Horizontal', fixed: { btnPos: 'horizontal' },
+        props: [P_HEADER, P_SUBTITLE, P_LEFTCTL, P_RIGHTCTL, P_SEGMENTS],
+      })}
+
+      <h2 id="Vertical">Vertical</h2>
+      <p class="page-desc">Varsayılan-olmayan buton düzeni: butonlar tam genişlikte üst üste dizilir — primary en üstte, ghost'lar altında. Dar veya dokunmatik yüzeylerde ve buton metinleri 80px'e sığmayacak kadar uzunsa tercih edilir. ${tk('.bt-dialog--vertical .bt-dialog__footer')} ${tk('flex-direction: column')}, içindeki ${tk('.bt-btn')}'ler ${tk('width: 100%')}. Aşağıdaki playground Button Position=Vertical'a kilitli; Header Type, Subtitle, kontroller ve Segments serbest.</p>
+      ${dlgLockedPg({
+        id: 'pgd-dialog-vertical-sec',
+        lockKey: 'vertical', lockLabel: 'Vertical', fixed: { btnPos: 'vertical' },
+        props: [P_HEADER, P_SUBTITLE, P_LEFTCTL, P_RIGHTCTL, P_SEGMENTS],
+      })}
     `};
   },
 };
@@ -13816,7 +14084,7 @@ PAGES_WEB['components/nav-drawer'] = {
           <tr><td>Panel · ${tk('bt-window__panel')}</td><td>Background</td><td>${tk('--bt-surface-primary-default')}</td><td>#ffffff</td></tr>
           <tr><td>Panel · ${tk('bt-window__panel')}</td><td>Border</td><td>${tk('--bt-border-primary-default')}</td><td>#d4d4d4</td></tr>
           <tr><td>Panel · ${tk('bt-window__panel')}</td><td>Border-radius</td><td>${tk('--bt-radius-sm')}</td><td>4px</td></tr>
-          <tr><td>Overlay</td><td>Background</td><td>—</td><td>rgba(0,0,0,0.24)</td></tr>
+          <tr><td>Overlay</td><td>Background</td><td>—</td><td>rgba(0,0,0,0.4) — Overlays grubu ortak backdrop'u (Alert Dialog / Dialog ile aynı)</td></tr>
           <tr><td>Overlay</td><td>Backdrop-filter</td><td>—</td><td>blur(4px)</td></tr>
           <tr><td>Header Actions · ${tk('bt-window__header-actions')}</td><td>Class</td><td>—</td><td>${tk('bt-btn bt-btn--sm bt-btn--primary-solid')}</td></tr>
         </tbody>
@@ -13873,7 +14141,7 @@ PAGES_WEB['components/nav-drawer'] = {
             '/* Overlay */',
             '.bt-win-overlay {',
             '  position: fixed; inset: 0; z-index: 999;',
-            '  background: rgba(0,0,0,0.24);',
+            '  background: rgba(0,0,0,0.4);  /* Overlays grubu ortak backdrop */',
             '  backdrop-filter: blur(4px);',
             '}',
             '',

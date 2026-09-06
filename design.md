@@ -1960,52 +1960,82 @@ Edit panel dropdown (`ep-dropdown`, `ep-dd-trigger`, `ep-dd-list`) aynı mantık
 
 ## 13. Overlay & Dialog
 
-### Alert Dialog (Onay/Hata)
+### Alert Dialog (`.bt-adlg`)
 
-```css
-.alert-dialog-overlay {
-  display: none; position: fixed; inset: 0; z-index: 10000;
-  background: rgba(16,24,40,0.32);
-  align-items: center; justify-content: center;
-}
-.alert-dialog-overlay.is-open { display: flex; }
+Figma kaynağı: node `625:1451` — 4 Type × 2 Button Position × 3 Button Segments. Kullanıcıdan tek bir kritik kararı isteyen, arka plan etkileşimini bloklayan sabit 420px modal. Dialog'un (`.bt-dialog`) aksine form alanı / header bar taşımaz: yalnızca ikon + başlık + açıklama + footer butonları.
 
-.alert-dialog {
-  background: var(--bt-surface-primary-default);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 6px rgba(16,24,40,0.03), 0 12px 16px rgba(16,24,40,0.08);
-  width: 420px; min-height: 204px;
-  display: flex; flex-direction: column;
-}
+> **Not — eski `.alert-dialog` / `.alert-dialog__pictogram` implementasyonu terk edildi.** Eski versiyon "daire içinde daire" bir pictogram ve hardcoded hex renkler kullanıyordu; güncel `.bt-adlg` tek katmanlı 32×32 renkli badge + tamamen token'lı renk seti kullanır ve ikonu global `.bt-icon` wrapper'ıyla render eder (component-özel icon slot class'ı yok — CLAUDE.md "İkon Wrapper Standardı").
 
-/* İkon: daire içinde daire (outer: brand-light, inner: brand-subtle) */
-.alert-dialog__pictogram {
-  position: relative; width: 40px; height: 40px;
-  border-radius: var(--radius-full); background: #f1f7fe;
-  display: flex; align-items: center; justify-content: center;
-}
-.alert-dialog__pictogram::before {
-  content: ''; position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  width: 34px; height: 34px; border-radius: var(--radius-full); background: #e2edfc;
-}
+**Markup**
 
-/* Error variant */
-.alert-dialog__pictogram--error { background: #fef2f2; }
-.alert-dialog__pictogram--error::before { background: #fde6e6; }
-.alert-dialog__pictogram--error i { color: #b31d38; }
-
-/* Warning variant */
-.alert-dialog__pictogram--warning { background: #fffbeb; }
-.alert-dialog__pictogram--warning::before { background: #fef3c7; }
-.alert-dialog__pictogram--warning i { color: #b45309; }
-
-.alert-dialog__footer {
-  flex-shrink: 0; border-top: 1px solid var(--bt-border-primary-muted);
-  display: flex; align-items: center; justify-content: flex-end;
-  gap: var(--space-2xl); padding: 12px var(--space-3xl);
-}
+```html
+<!-- Type=Error, Horizontal buttons, 2 segments -->
+<div class="bt-adlg bt-adlg--error bt-adlg--horizontal bt-adlg--seg-2">
+  <div class="bt-adlg__body">
+    <div class="bt-adlg__icon-wrap">
+      <span class="bt-icon">
+        <!-- SVG'ye width/height YAZILMAZ — .bt-icon svg kuralı 16×16 zorlar -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+      </span>
+    </div>
+    <div class="bt-adlg__text">
+      <p class="bt-adlg__title">Title Text Here</p>
+      <div class="bt-adlg__desc"><p>Description for additional information…</p></div>
+    </div>
+  </div>
+  <div class="bt-adlg__footer">
+    <!-- Reuse edilen Button component'i — bespoke buton yazılmaz -->
+    <button class="bt-btn bt-btn--sm bt-btn--base-flat" type="button">Cancel</button>
+    <button class="bt-btn bt-btn--sm bt-btn--error-solid" type="button">Delete</button>
+  </div>
+</div>
 ```
+
+**Modifier class'ları**
+
+- Type: `bt-adlg--information` / `bt-adlg--success` / `bt-adlg--warning` / `bt-adlg--error` — yalnızca ikon badge zemin+renk token'ını ve Confirm butonun solid class'ını değiştirir.
+- Button position: `bt-adlg--horizontal` (butonlar sağa hizalı, her biri 80px) / `bt-adlg--vertical` (tam genişlik, üst üste).
+- Segment sayısı: `bt-adlg--seg-1` / `bt-adlg--seg-2` / `bt-adlg--seg-3` — vertical düzende seg-2/3 butonları `align-items: flex-end`, seg-1 `justify-content: center`.
+
+**Buton sırası** (Confirm = tipe göre solid, diğerleri `bt-btn--base-flat`)
+
+- **Vertical:** Confirm en üstte, ghost(lar) altta. seg-1 → sadece Confirm; seg-2 → Confirm + Cancel; seg-3 → Confirm + 2 ghost.
+- **Horizontal:** ghost(lar) solda, Confirm sağda. seg-1 → sadece Confirm; seg-2 → Cancel + Confirm; seg-3 → 2 ghost + Confirm.
+
+**CSS Tokens**
+
+| Element | Property | Token | Fallback |
+|---|---|---|---|
+| Konteyner `.bt-adlg` | Width | — | 420px |
+| Konteyner | Background | `--bt-base-default` | #ffffff |
+| Konteyner | Border radius | `--bt-radius-md` | 6px |
+| Konteyner | Shadow | `--bt-shadow-md` | 0 2px 4px… / 0 4px 8px… |
+| Konteyner | Overflow | — | hidden (footer kenarlığı köşeye taşmasın) |
+| Body `.bt-adlg__body` | Padding | `--bt-space-3xl` | 20px |
+| Body | Gap (icon ↔ text) | `--bt-space-md` | 8px |
+| Body | Hizalama | — | yatay + dikey ortalı (flex column) |
+| Icon badge `.bt-adlg__icon-wrap` | Size | — | 32×32 |
+| Icon badge | Radius | `--bt-radius-full` | 9999px |
+| Icon badge · Information | Background / Color | `--bt-primary-subtle` / `--bt-icon-information-default` | #e2edfc / #0d4e97 |
+| Icon badge · Success | Background / Color | `--bt-success-subtle` / `--bt-icon-success-default` | #daede5 / #2d584b |
+| Icon badge · Warning | Background / Color | `--bt-warning-subtle` / `--bt-icon-warning-default` | #f9f2ce / #aa820a |
+| Icon badge · Error | Background / Color | `--bt-error-subtle` / `--bt-icon-error-default` | #fde6e6 / #b31d38 |
+| Icon (`.bt-icon` içinde) | Size | — | 16×16 (global `.bt-icon svg`), badge `color`'ını `currentColor` ile miras alır |
+| Text `.bt-adlg__text` | Gap (title ↔ desc) | `--bt-space-xs` | 4px |
+| Title `.bt-adlg__title` | Font | `--bt-title-sm-medium` | 500 14px/16px |
+| Title / Description | Color | `--bt-text-primary-default` | #1a1a1a |
+| Description `.bt-adlg__desc` | Font | `--bt-text-xs-regular` | 400 12px/16px |
+| Footer `.bt-adlg__footer` | Border top | `--bt-border-primary-muted` | #e6e6e6 |
+| Footer | Padding | `--bt-space-xl` / `--bt-space-2xl` | 12px / 16px |
+| Footer | Gap | `--bt-space-md` | 8px |
+| Confirm button | Class | — | `bt-btn bt-btn--sm bt-btn--{type}-solid` (information → `--primary-solid`) |
+| Confirm · Horizontal | Width | — | 80px |
+| Confirm · Vertical | Width | — | 100% |
+| Cancel / üçüncül | Class | — | `bt-btn bt-btn--sm bt-btn--base-flat` |
+
+**JS Davranışı**
+
+Alert Dialog bir modal backdrop içinde açılır (z-index: overlay katmanı, bkz. §17). **Overlays grubu ortak backdrop'u:** `background: rgba(0,0,0,0.4)` + `backdrop-filter: blur(4px)` (`-webkit-` dahil) — Alert Dialog, Dialog ve Drawer (`.bt-win-overlay`) aynı değerleri paylaşır. Backdrop'a veya `data-*-close` attribute'lu herhangi bir butona tıklamak dialog'u kapatır — açılış/kapanış deseni Dialog (§15.4) ile birebir aynı: `appendChild` → reflow (`void host.offsetHeight`) → `is-visible` class'ı; kapanışta class kaldır → `setTimeout(remove, 200)`. Aynı anda birden fazla Alert Dialog açılmaz.
 
 ### Toast / Alert Banner
 
@@ -3021,12 +3051,12 @@ Figma kaynağı: node `639:17632`. 2 Header Type × Subtitle On/Off × 2 Button 
 
 ### 15.4 JS Davranışı
 
-Dialog bir modal overlay içinde açılır. Backdrop'a tıklamak veya `data-pgd-close` attribute'lu herhangi bir butona tıklamak dialog'u kapatır. Uygulama kodu için:
+Dialog bir modal overlay içinde açılır. Backdrop'a tıklamak veya `data-pgd-close` attribute'lu herhangi bir butona tıklamak dialog'u kapatır. **Overlays grubu ortak backdrop'u:** `background: rgba(0,0,0,0.4)` + `backdrop-filter: blur(4px)` (`-webkit-` dahil) — Alert Dialog (§13), Dialog ve Drawer (`.bt-win-overlay`) aynı değerleri paylaşır. Uygulama kodu için:
 
 ```javascript
 // Open: append to body, add is-visible class after reflow
 const host = document.createElement('div');
-host.className = 'dialog-backdrop'; // position:fixed; inset:0; ...
+host.className = 'dialog-backdrop'; // position:fixed; inset:0; background:rgba(0,0,0,0.4); backdrop-filter:blur(4px); ...
 host.innerHTML = dialogHtml;
 document.body.appendChild(host);
 void host.offsetHeight;

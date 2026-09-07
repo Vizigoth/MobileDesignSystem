@@ -349,12 +349,12 @@ function renderToc(page) {
     `;
   }
 
-  setupTocScrollSpy();
   // Overview linki innerHTML'de "active" olarak hardcode edildi (yukarı bak) —
-  // indicator'ı da aynı pozisyona getirmek için setActiveTocLink çağrılır
-  // (layout'un oturması için bir sonraki frame'e bırakılır, aksi halde
-  // getBoundingClientRect henüz eski/boş DOM'u ölçer).
-  requestAnimationFrame(() => setActiveTocLink('page-title'));
+  // ama GERÇEK başlangıç konumu setupTocScrollSpy() içinde senkron olarak
+  // hesaplanıp uygulanıyor (2026-09-07 düzeltmesi — bkz. altta, önceden burada
+  // koşulsuz 'page-title' basılıyordu, sayfa scroll pozisyonu 0 olmadığında
+  // TOC yanlış gösteriyordu).
+  setupTocScrollSpy();
 }
 
 function setActiveTocLink(id) {
@@ -399,6 +399,37 @@ function setupTocScrollSpy() {
   });
 
   targets.forEach(t => _tocObserver.observe(t));
+
+  // Başlangıç aktif linki — IntersectionObserver'ın kendi ilk (async) callback'i
+  // gelene KADAR beklemek yerine (bu her zaman aynı frame'de gelmeyebilir ve
+  // önceki kod bu arada 'page-title'i koşulsuz basıyordu, race condition),
+  // GERÇEK scroll pozisyonunu SENKRON hesaplayıp hemen uyguluyoruz — sayfa
+  // yenilendiğinde (tarayıcı scroll restoration) veya scroll 0 olmadan
+  // render edildiğinde TOC ilk andan itibaren doğru konumu gösterir
+  // (kullanıcı geri bildirimi, 2026-09-07: "sayfayı yenilediğimde toc
+  // başlığı triggerlanan alanın dışındaysa toc doğru yeri göstermiyor").
+  requestAnimationFrame(() => setActiveTocLink(_tocDetectActiveId(targets)));
+}
+
+// setupTocScrollSpy'daki IntersectionObserver'ın rootMargin'iyle (-76px üst /
+// -70% alt) AYNI bandı senkron olarak taklit eder — bir heading bu bantta
+// (76px sticky header'ın altında, viewport'un üst %30'unda) sayılıyorsa "aktif
+// adayı" odur; observer'ın async ilk tetiklemesini beklemeye gerek kalmaz.
+function _tocDetectActiveId(targets) {
+  const topBound    = 76;                    // .main-header yüksekliği (observer'daki -76px ile aynı)
+  const bottomBound = window.innerHeight * 0.30; // observer'daki -70% alt kesimle aynı bant
+  const inBand = targets.filter(t => {
+    const r = t.getBoundingClientRect();
+    return r.top < bottomBound && r.bottom > topBound;
+  });
+  if (inBand.length) {
+    inBand.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+    return inBand[0].id;
+  }
+  // Bantta hiçbir heading yoksa: hepsi bandın ALTINDAYSA (sayfa başı) Overview;
+  // hepsi bandın ÜSTÜNDEYSE (sayfa sonuna kadar scroll edilmiş) son heading aktif kalır.
+  const passed = targets.filter(t => t.getBoundingClientRect().top <= topBound);
+  return passed.length ? passed[passed.length - 1].id : 'page-title';
 }
 
 window.scrollToSection = function(id) {
@@ -497,7 +528,15 @@ function render() {
   renderTabs(page);
   renderContent(page);
   renderToc(page);
-  document.querySelector('.main').scrollTop = 0;
+  // 2026-09-07 düzeltmesi: `.main`'in kendi scrollTop'ı hiç işe yaramıyordu —
+  // .main'de `overflow` tanımlı değil (bkz. styles.css), yani kendi scroll
+  // container'ı DEĞİL; sayfa gerçekte window/document seviyesinde kayıyor
+  // (TOC'un IntersectionObserver'ı da zaten `root:null` ile bunu varsayıyor).
+  // Bu yüzden başka bir sidebar sayfasına geçildiğinde scroll pozisyonu HİÇ
+  // sıfırlanmıyor, önceki sayfadan kalan konumdan devam ediyordu (kullanıcı
+  // geri bildirimi, 2026-09-07: "...sayfayı en tepeden başlatmak yerine
+  // bulunduğum konumdan devam ettiriyor").
+  window.scrollTo(0, 0);
 }
 
 // ── Init ────────────────────────────────────────────────────

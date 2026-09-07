@@ -8368,7 +8368,7 @@ function crdCss(variant, props) {
 
 PAGES_WEB['components/card'] = {
   tabs: ['Overview', 'CSS Properties', 'Usage'],
-  toc:  ['Header Types', 'Control Slots', 'Body', 'Footer', 'Default Card', 'Clickable Card', 'Selectable Card', 'Collapsible Card', 'Scrollable Card'],
+  toc:  ['Header Types', 'Controls', 'Body', 'Footer', 'Default Card', 'Clickable Card', 'Selectable Card', 'Collapsible Card', 'Scrollable Card'],
   render(tab) {
     const title = 'Card';
     const tk = v => `<code style="font-size:12px;font-family:var(--mono)">${v}</code>`;
@@ -8552,7 +8552,7 @@ PAGES_WEB['components/card'] = {
         </tbody>
       </table>
 
-      <h2 id="Control Slots">Control Slots</h2>
+      <h2 id="Controls">Controls</h2>
       <p class="page-desc">Header'ın sol ve sağ tarafındaki 40×40 slotlar; Icon, Button, Checkbox, Radio Button, Switch, Avatar, Avatar Group, Badge veya Text içeriklerinden birini gösterebilir — tümü design system'deki gerçek bileşenleri reuse eder.</p>
       <table class="token-table">
         <thead><tr><th>Content</th><th>Preview</th><th>Reused Class</th></tr></thead>
@@ -10855,20 +10855,59 @@ document.addEventListener('scroll', function() {
 // body'ye portal'lanır ve parent'ın SAĞ kenarına, item hizasında konumlanır;
 // sığmazsa sola / yukarı flip eder. Zincir recursive: alt menüde de has-sub
 // item olabilir. Kök kapanınca / dışarı tıklanınca tüm zincir toplanır.
+//
+// Açılış/kapanış animasyonu (2026-09-07, devam 16 — kullanıcı isteği "smooth
+// açılış kapanış animasyonu ekle"): CSS tarafında `.bt-ovf-menu__list` fade+
+// scale transition'ı tanımlı (styles.css), `--visible` class'ı görünür duruma
+// geçirir. JS `display:none` toggling'ini KORUYOR (portal mekaniği aynı) ama
+// artık anında değil, `_btOvfAnimateOpen`/`_btOvfAnimateClose` üzerinden:
+// açılışta `display:block` + konumlama SENKRON kalır (offsetWidth/Height ölçümü
+// transform'dan etkilenmez), sonra bir sonraki frame'de `--visible` eklenir
+// (transition tetiklenir için başlangıç state'i önce commit olmalı); kapanışta
+// `--visible` kaldırılıp `--closing` (pointer-events:none) eklenir, GERÇEK
+// `display:none` + portal'dan geri taşıma ancak `OVF_ANIM_MS` sonra olur —
+// aksi halde fade sırasında liste aniden kaybolurdu. `prefers-reduced-motion`
+// saygı görür (styles.css'te transition:none, burada süre 0'a iner).
+const OVF_ANIM_MS = 140;
+const _btOvfHideTimers = new WeakMap();
+function _btOvfReducedMotion() {
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+function _btOvfAnimateOpen(list) {
+  const pending = _btOvfHideTimers.get(list);
+  if (pending) { clearTimeout(pending); _btOvfHideTimers.delete(list); }
+  list.classList.remove('bt-ovf-menu__list--closing');
+  void list.offsetWidth;   // reflow — kapalı state'i commit et ki transition tetiklensin
+  requestAnimationFrame(() => list.classList.add('bt-ovf-menu__list--visible'));
+}
+function _btOvfAnimateClose(list, onDone) {
+  const pending = _btOvfHideTimers.get(list);
+  if (pending) clearTimeout(pending);
+  list.classList.remove('bt-ovf-menu__list--visible');
+  list.classList.add('bt-ovf-menu__list--closing');
+  const t = setTimeout(() => {
+    _btOvfHideTimers.delete(list);
+    list.classList.remove('bt-ovf-menu__list--closing');
+    onDone();
+  }, _btOvfReducedMotion() ? 0 : OVF_ANIM_MS);
+  _btOvfHideTimers.set(list, t);
+}
 function btOvfSubHide(sub) {
   // önce torunları (bu sub'ın içindeki bir item'a bağlı alt-sub'lar)
   document.querySelectorAll('.bt-ovf-menu__list--sub[data-bt-ovf-portal="1"]').forEach(s => {
     if (s !== sub && s._btOvfParentItem && sub.contains(s._btOvfParentItem)) btOvfSubHide(s);
   });
-  sub.style.display = 'none';
-  sub.removeAttribute('data-bt-ovf-portal');
-  sub.style.position = sub.style.top = sub.style.left = '';
   const pit = sub._btOvfParentItem;
   if (pit) {
     pit.classList.remove('bt-ovf-menu__item--selected');
     pit.setAttribute('aria-expanded', 'false');
   }
-  if (sub._btOvfHome) sub._btOvfHome.appendChild(sub);
+  _btOvfAnimateClose(sub, () => {
+    sub.style.display = 'none';
+    sub.removeAttribute('data-bt-ovf-portal');
+    sub.style.position = sub.style.top = sub.style.left = '';   // ancak GERÇEKTEN gizlendikten sonra — fade sırasında sıçramasın
+    if (sub._btOvfHome) sub._btOvfHome.appendChild(sub);
+  });
 }
 function btOvfSubHideFor(item) {
   document.querySelectorAll('.bt-ovf-menu__list--sub[data-bt-ovf-portal="1"]').forEach(s => {
@@ -10901,6 +10940,7 @@ function btOvfSubOpen(item) {
   sub.style.top  = top + 'px';
   item.classList.add('bt-ovf-menu__item--selected');
   item.setAttribute('aria-expanded', 'true');
+  _btOvfAnimateOpen(sub);
 }
 window.btOvfSubToggle = function(event, item) {
   event.stopPropagation();
@@ -10929,9 +10969,11 @@ window.btOvfSubHover = function(el, entering) {
 function btOvfMenuHide(list) {
   if (list.classList.contains('bt-ovf-menu__list--sub')) { btOvfSubHide(list); return; }
   document.querySelectorAll('.bt-ovf-menu__list--sub[data-bt-ovf-portal="1"]').forEach(btOvfSubHide);
-  list.style.display = 'none';
-  list.removeAttribute('data-bt-ovf-portal');
-  if (list._btOvfHome) list._btOvfHome.appendChild(list);
+  _btOvfAnimateClose(list, () => {
+    list.style.display = 'none';
+    list.removeAttribute('data-bt-ovf-portal');
+    if (list._btOvfHome) list._btOvfHome.appendChild(list);
+  });
 }
 function _btOvfCloseAll() {
   document.querySelectorAll('.bt-ovf-menu__list--sub[data-bt-ovf-portal="1"]').forEach(btOvfSubHide);
@@ -10942,7 +10984,7 @@ window.btOvfMenuToggle = function(event, btn) {
   const menu = btn.closest('.bt-ovf-menu');
   if (!menu) return;
   const list = menu.querySelector('.bt-ovf-menu__list') || document.querySelector('.bt-ovf-menu__list[data-bt-ovf-portal="1"]:not(.bt-ovf-menu__list--sub)');
-  const wasOpen = list && list.style.display === 'block';
+  const wasOpen = list && list.getAttribute('data-bt-ovf-portal') === '1';
   _btOvfCloseAll();
   if (!wasOpen && list) {
     const r = btn.getBoundingClientRect();
@@ -10960,6 +11002,7 @@ window.btOvfMenuToggle = function(event, btn) {
       list.style.left  = 'auto';
       list.style.right = (window.innerWidth - r.right) + 'px';
     }
+    _btOvfAnimateOpen(list);
   }
 };
 window.btOvfMenuClose = function(event, item) {
@@ -10984,17 +11027,27 @@ window.btOvfToggle = function(event, item) {
   const on = box.classList.toggle(_btOvfToggleCls(box));
   item.setAttribute('aria-checked', on ? 'true' : 'false');
 };
-// Radios varyantı — tek seçim: tıklanan item'ın radio'sunu seç, aynı menüdeki
-// diğer tüm menuitemradio'ları temizle. MENÜYÜ AÇIK TUT.
+// Radios / Palettes varyantı — tek seçim: tıklanan item'ı seç, aynı menüdeki
+// diğer tüm menuitemradio'ları temizle. MENÜYÜ AÇIK TUT. Palette de aynı yolu
+// kullanır (2026-09-07, devam 18) — renk seçimi doğası gereği tekli (radio ile
+// birebir aynı UX). Seçili göstergesi kontrol tipine göre FARKLI yerde:
+// Radio'nun kendi dot'u zaten Figma'da dolu/boş iki hâlli (bt-radio__dot--
+// selected) — kontrolün KENDİSİ değişir. Palette'in ise Figma'da "selected"
+// diye bir tasarımı YOK (kullanıcı düzeltmesi, devam 19) — swatch'a özel
+// icat edilmiş bir ring yerine, component'te ZATEN var olan genel Active/
+// Selected item state'i (.bt-ovf-menu__item--selected, Figma'dan doğrulanmış,
+// §21.3) reuse edilir; item'ın KENDİSİ vurgulanır, swatch olduğu gibi kalır.
 window.btOvfRadioPick = function(event, item) {
   event.stopPropagation();
   if (item.getAttribute('aria-disabled') === 'true') return;
   const list = item.closest('.bt-ovf-menu__list');
   if (!list) return;
   list.querySelectorAll('[role="menuitemradio"]').forEach(it => {
-    const dot = it.querySelector(':scope > .bt-ovf-menu__item-row .bt-radio__dot');
     const sel = it === item;
+    const dot = it.querySelector(':scope > .bt-ovf-menu__item-row .bt-radio__dot');
+    const isPalette = !!it.querySelector(':scope > .bt-ovf-menu__item-row .bt-ovf-menu__ctrl-palette');
     if (dot) dot.classList.toggle('bt-radio__dot--selected', sel);
+    if (isPalette) it.classList.toggle('bt-ovf-menu__item--selected', sel);
     it.setAttribute('aria-checked', sel ? 'true' : 'false');
   });
 };
@@ -14732,16 +14785,42 @@ const _ovfIconCopyCheck    = _ovfSvg('<path d="m12 15 2 2 4-4"/><rect width="14"
 const _ovfIconMail         = _ovfSvg('<path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/>');
 const _ovfIconMsgDot       = _ovfSvg('<path d="M12.7 3H4a2 2 0 0 0-2 2v16.286a.71.71 0 0 0 1.212.502l2.202-2.202A2 2 0 0 1 6.828 19H20a2 2 0 0 0 2-2v-4.7"/><circle cx="19" cy="6" r="3"/>');
 const _ovfIconCircleCheck  = _ovfSvg('<circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/>');
-// Avatar varyantı (hesap menüsü) aksiyon ikonları — Figma "Overflow Menu Avatar" 1182:132948 (Icon/placeholder yerine)
-const _ovfIconUser         = _ovfSvg('<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>');
-const _ovfIconSettings     = _ovfSvg('<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>');
-const _ovfIconUsers        = _ovfSvg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/>');
-const _ovfIconLanguages    = _ovfSvg('<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>');
+// Avatar varyantı (hesap menüsü) aksiyon ikonları — Figma node 1212:132236
+// ("Overflow Menu Avatar") üzerinden 2026-09-07'de (devam 23, kullanıcı isteği
+// "avatar variantını ... tekrar incele") doğrulandı/düzeltildi. Eski set
+// (`user`, `code`, `settings` (gear), `users`, `languages`) tamamen YANLIŞTI:
+// hem ikonlar hem "User List" adlı 5. aksiyon (Figma'da hiç yok, "Language"
+// onun yerine 4. ve SON aksiyon) uydurmaydı. Doğru ikon İSİMLERİ Figma'dan
+// (get_design_context çıktısındaki data-name="Icon/..." attribute'ları)
+// okundu: circle-user-round / user-shield / settings-2 / globe. Kullanıcının
+// düzeltmesiyle (2026-09-07): ikonlar Figma'nın kendi export'undan ÇEKİLMEDİ/
+// çizilmedi — proje kuralı, tüm Bentas DS ikonları lucide.dev'in KENDİSİNDEN
+// (lucide-static paketi) birebir alınır; buradaki path'ler de öyle —
+// unpkg.com/lucide-static@latest/icons/{isim}.svg'den fetch edildi.
+const _ovfIconCircleUserRound = _ovfSvg('<path d="M18 20a6 6 0 0 0-12 0"/><circle cx="12" cy="10" r="4"/><circle cx="12" cy="12" r="10"/>');
+const _ovfIconUserShield      = _ovfSvg('<path d="M10 15H6a4 4 0 0 0-4 4v2"/><path d="M22 17.5c0 2.499-1.75 3.749-3.83 4.474a.5.5 0 0 1-.335-.005c-2.085-.72-3.835-1.97-3.835-4.47V14a.5.5 0 0 1 .5-.499c1 0 2.25-.6 3.12-1.36a.6.6 0 0 1 .76-.001c.875.765 2.12 1.36 3.12 1.36a.5.5 0 0 1 .5.5z"/><circle cx="9" cy="7" r="4"/>');
+const _ovfIconSetting2        = _ovfSvg('<path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>');
+const _ovfIconGlobe           = _ovfSvg('<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>');
 const _ovfIconLogOut       = _ovfSvg('<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>');
-const _ovfIconCode         = _ovfSvg('<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>');
-// Avatar varyantı aksiyon listesi — Figma "Overflow Menu Avatar" 1182:132948 sırasıyla
-const _OVF_AVATAR_ACTION_LABELS = ['Profile', 'Developer Mode', 'Settings', 'User List', 'Language'];
-const _OVF_AVATAR_ACTION_ICONS  = [_ovfIconUser, _ovfIconCode, _ovfIconSettings, _ovfIconUsers, _ovfIconLanguages];
+// Avatar varyantı aksiyon listesi — Figma "Overflow Menu Avatar" 1212:132236
+// üzerinden BİREBİR: Group=3/Items=6 varsayılanında ortadaki section tam bu
+// DÖRT aksiyonu (fazlası/eksiği yok) taşıyor — eski 5. eleman "User List"
+// Figma'da HİÇ yoktu, "Language" de yanlışlıkla hiç görünmeyen 5. sıraya
+// düşmüştü (nItems maks. 6 olduğu için erişilemez kalıyordu).
+const _OVF_AVATAR_ACTION_LABELS = ['Profile', 'Developer Mode', 'Settings', 'Language'];
+const _OVF_AVATAR_ACTION_ICONS  = [_ovfIconCircleUserRound, _ovfIconUserShield, _ovfIconSetting2, _ovfIconGlobe];
+// Palettes Icons varyantı sol ikonu (Lucide "blend", her item'da aynı — renk zaten
+// sağdaki swatch'la ayırt edilir; 2026-09-07 devam 20, kullanıcı isteğiyle "palette"
+// ikonundan değiştirildi — iki iç içe geçen daire, renk karışımını çağrıştırır)
+const _ovfIconBlend        = _ovfSvg('<circle cx="9" cy="9" r="7"/><circle cx="15" cy="15" r="7"/>');
+
+// Liste genişliği — DETERMİNİSTİK sabitler (2026-09-07, devam 6). Basic (kontrolsüz)
+// = OVF_LIST_BASE_WIDTH; her item'da render edilen her aktif kontrol slotu (Left/
+// Right, tip fark etmez) tabana +OVF_LIST_CTRL_WIDTH ekler — bkz. ovfMenuHtml
+// içindeki _ovfTrackCtrl/maxCtrlWidth. .bt-ovf-menu__ctrl'in kendi 32×32 boyutuyla
+// birebir eşleşir (styles.css).
+const OVF_LIST_BASE_WIDTH = 160;
+const OVF_LIST_CTRL_WIDTH = 32;
 
 // Kontrol tipi seçenekleri (Figma "Overflow Menu Item Controls" — Type)
 const OVF_LEFT_OPTS = [
@@ -14780,6 +14859,8 @@ const OVF_VARIANT_OPTS = [
   { key: 'radiosIcons',     label: 'Radios Icons'     },
   { key: 'switches',        label: 'Switches'         },
   { key: 'switchesIcons',   label: 'Switches Icons'   },
+  { key: 'palettes',        label: 'Palettes'         },
+  { key: 'palettesIcons',   label: 'Palettes Icons'   },
   { key: 'avatar',          label: 'Avatar'           },
   { key: 'sections',        label: 'Sections'         },
   { key: 'destructive',     label: 'Destructive'      },
@@ -14789,14 +14870,24 @@ const OVF_GROUP_OPTS  = ['1','2','3'].map(n => ({ key: n, label: n }));   // men
 const _OVF_LABELS = ['Edit File','Copy File','Import File','Export File','Add Reminder','Delete File'];
 // Checkboxes varyantı ayar-listesi etiketleri (Figma "Overflow Menu Checkboxes" 1178:22447)
 const _OVF_CHECK_LABELS = ['Activity notifications','Status notifications','Task notifications','Email notifications','SMS notifications','Confirmation notifications'];
+// Palettes varyantı — kullanıcı isteğiyle (2026-09-07, devam 18) YENİ bir renk seti
+// icat ETMİYOR, playground'un toolbar'ındaki gerçek "Background" renk seçicisinden
+// (bkz. playground.js PGD_BG_OPTIONS) örnekliyor — aynı 8 `--bt-surface-*` token,
+// aynı sıra/etiket. `pages-web.js` `<script>` sırası itibarıyla `playground.js`'ten
+// SONRA yüklenir (index.html), bu yüzden top-level `const PGD_BG_OPTIONS` burada
+// (aynı doküman içi script'ler arası paylaşılan lexical scope) DOĞRUDAN kullanılabilir
+// — `registerPlayground` de zaten aynı şekilde playground.js'ten reuse ediliyor.
+const _OVF_PALETTE_LABELS = PGD_BG_OPTIONS.map(o => o.label);
+const _OVF_PALETTE_COLORS = PGD_BG_OPTIONS.map(o => `var(${o.cssVar})`);
 const _OVF_GROUP_LABELS = ['File', 'Actions', 'More'];
 
 // Per-item (Item grubu) prop option'ları — hepsinde ilk seçenek "Inherit"
 // (Menu Item grubundaki paylaşılan değeri kullan). ovfMenuHtml boş/inherit'i
-// paylaşılan değere düşürür.
+// paylaşılan değere düşürür. Left/Right Control için Inherit seçeneği artık
+// STATİK değil — ovfSecProps() içinde her render'da o an gerçekten uygulanan
+// kontrolü gösterecek şekilde ("Inherit (Icon)" gibi) dinamik üretiliyor
+// (bkz. ovfSecProps, 2026-09-07).
 const OVF_INHERIT_OPT     = { key: 'inherit', label: 'Inherit' };
-const OVF_LEFT_ITEM_OPTS  = [OVF_INHERIT_OPT, ...OVF_LEFT_OPTS];
-const OVF_RIGHT_ITEM_OPTS = [OVF_INHERIT_OPT, ...OVF_RIGHT_OPTS];
 const OVF_DESC_ITEM_OPTS  = [OVF_INHERIT_OPT, { key: 'on', label: 'On' }, { key: 'off', label: 'Off' }];
 const OVF_STATE_ITEM_OPTS = [OVF_INHERIT_OPT, ...OVF_STATE_OPTS];
 
@@ -14826,18 +14917,23 @@ function ovfCtrlHtml(type, opt = {}) {
 //                  içine gizli bir .bt-ovf-menu__list--sub gömülür, hover/click
 //                  handler'ları btOvfSubToggle/btOvfSubHover'a bağlanır.
 //                  (Figma "Overflow Menu Submenu" 1164:4836)
-//   o.toggle     → 'checkbox' | 'radio' | 'switch'. Verilirse item bir "toggle
-//                  item" olur (Figma "Overflow Menu Checkboxes/Radios/Switches"):
-//                  sağ slot o kontrole kilitlenir, role="menuitemcheckbox"
-//                  (radio → "menuitemradio") + aria-checked. Tıklama checkbox/
-//                  switch → btOvfToggle (çoklu), radio → btOvfRadioPick (tekli);
-//                  ikisi de MENÜYÜ KAPATMAZ. o.toggleOn = 'on'|'off' başlangıç.
+//   o.toggle     → 'checkbox' | 'radio' | 'switch' | 'palette'. Verilirse item
+//                  bir "toggle item" olur (Figma "Overflow Menu Checkboxes/
+//                  Radios/Switches"; Palette aynı desenin bir renk-seçici
+//                  uzantısı, 2026-09-07 devam 18): sağ slot o kontrole
+//                  kilitlenir, role="menuitemcheckbox" (radio/palette →
+//                  "menuitemradio" — ikisi de TEK seçim) + aria-checked.
+//                  Tıklama checkbox/switch → btOvfToggle (çoklu bağımsız),
+//                  radio/palette → btOvfRadioPick (tekli, aynı listedeki
+//                  diğerlerini temizler); hepsi MENÜYÜ KAPATMAZ. o.toggleOn =
+//                  'on'|'off' başlangıç. o.toggleColor → yalnız toggle='palette'
+//                  iken swatch rengi (bkz. ovfCtrlHtml 'palette' case).
 //                  interactive:false → statik (onclick yok).
 function ovfItemHtml(o = {}) {
   const {
     label = 'Label Text Here', type = 'default', state = 'default',
     left = 'none', right = 'none', leftOpt = {}, rightOpt = {}, desc,
-    interactive = true, submenu, toggle, toggleOn = 'off',
+    interactive = true, submenu, toggle, toggleOn = 'off', toggleColor,
   } = o;
   const hasSub    = submenu != null;
   const hasToggle = toggle != null;
@@ -14845,14 +14941,23 @@ function ovfItemHtml(o = {}) {
   if (type === 'danger') cls.push('bt-ovf-menu__item--danger');
   if (hasSub) cls.push('bt-ovf-menu__item--has-sub');
   if (state !== 'default') cls.push(`bt-ovf-menu__item--${state}`);
+  // Palette'in seçili göstergesi (2026-09-07, devam 19 — kullanıcı düzeltmesi:
+  // "Figma tasarımında palette'in selected diye bir tasarımı yok, o zaman menu
+  // item'da zaten var olan selected'ı kullan"): swatch'a özel yeni bir ring
+  // ICAT ETMEK yerine (devam 18'de yapılmıştı, Figma karşılığı yoktu) item'ın
+  // KENDİSİ genel Active/Selected state'ini (--bt-base-muted, Figma'dan
+  // doğrulanmış, §21.3) alır — Submenu'nün açık-alt-menü göstergesiyle (has-sub
+  // item Active olur) BİREBİR aynı desen.
+  if (toggle === 'palette' && toggleOn === 'on' && !cls.includes('bt-ovf-menu__item--selected')) cls.push('bt-ovf-menu__item--selected');
   const descHtml  = desc ? `<span class="bt-ovf-menu__label-desc">${desc}</span>` : '';
   const effRight    = hasSub ? 'icon' : (hasToggle ? toggle : right);
-  const effRightOpt = hasSub ? { icon: _ovfIconChevronRight } : (hasToggle ? { on: toggleOn } : rightOpt);
+  const effRightOpt = hasSub ? { icon: _ovfIconChevronRight } : (hasToggle ? { on: toggleOn, color: toggleColor } : rightOpt);
   let handlers, role = 'menuitem';
   if (hasToggle) {
-    role = toggle === 'radio' ? 'menuitemradio' : 'menuitemcheckbox';
+    const isSingleSelect = toggle === 'radio' || toggle === 'palette';
+    role = isSingleSelect ? 'menuitemradio' : 'menuitemcheckbox';
     const ariaChk = ` aria-checked="${toggleOn === 'on' ? 'true' : 'false'}"`;
-    const fn = toggle === 'radio' ? 'btOvfRadioPick' : 'btOvfToggle';
+    const fn = isSingleSelect ? 'btOvfRadioPick' : 'btOvfToggle';
     handlers = (interactive && state !== 'disabled')
       ? `${ariaChk} onclick="${fn}(event,this)"`
       : `${ariaChk}${state === 'disabled' ? ' aria-disabled="true"' : ''}`;
@@ -14900,7 +15005,15 @@ function ovfTriggerHtml(kind = 'labeled') {
     : `<button type="button" class="bt-btn bt-btn--sm bt-btn--base-outline" aria-haspopup="true" onclick="btOvfMenuToggle(event,this);this.blur()">Open Menu</button>`;
 }
 function ovfListHtml(sectionsInner, o = {}) {
-  const listStyle = o.open === true ? ' style="display:block;position:relative;top:auto;right:auto;"' : '';
+  // Style parçaları birikir: open (statik/bare-list, portal yok) + minWidth
+  // (JS'te deterministik hesaplanan, bkz. ovfMenuHtml) — inline style, JS'in
+  // btOvfMenuToggle'da SONRADAN eklediği top/left/right/display ile ÇAKIŞMAZ,
+  // sadece onlara ek olarak min-width taşır (element.style.X = ... yalnız o
+  // TEK property'i değiştirir, mevcut inline style'ın geri kalanına dokunmaz).
+  const styleParts = [];
+  if (o.open === true) styleParts.push('display:block', 'position:relative', 'top:auto', 'right:auto');
+  if (o.minWidth) styleParts.push(`min-width:${o.minWidth}px`);
+  const listStyle = styleParts.length ? ` style="${styleParts.join(';')}"` : '';
   // o.trigger === 'none' → yalnız açık liste (State/Controls/Content tablo hücreleri için);
   // aksi halde trigger + liste (Figma "Example" düzeni).
   const trig = o.trigger === 'none' ? '' : ovfTriggerHtml(o.trigger === 'icon' ? 'icon' : 'labeled');
@@ -14939,7 +15052,8 @@ function ovfItemAutoCtrl(variant, i, nItems, sharedLeft, sharedRight) {
   const avAct = isAvatarVar && !avId && !avOut;
   const isSub = variant === 'submenu' && (i === 2 || i === 4);
   const TOGGLE_KIND = { checkboxes: 'checkbox', checkboxesIcons: 'checkbox',
-    radios: 'radio', radiosIcons: 'radio', switches: 'switch', switchesIcons: 'switch' }[variant] || null;
+    radios: 'radio', radiosIcons: 'radio', switches: 'switch', switchesIcons: 'switch',
+    palettes: 'palette', palettesIcons: 'palette' }[variant] || null;
 
   let left = sharedLeft, right = sharedRight;
   if (avId)       { left = 'avatar'; right = 'none'; }
@@ -14963,13 +15077,17 @@ function ovfMenuHtml(p = {}) {
   const nGroups  = Math.max(1, Math.min(3, parseInt(p.groups || (variant === 'sections' ? '2' : variant === 'avatar' ? '3' : '1'), 10)));
   const flush    = p.divider === 'off';
 
-  // Toggle varyantları: sağ slot checkbox/radio/switch'e kilitli, tıklama menüyü
-  // kapatmaz (Checkboxes çoklu, Radios tekli, Switches çoklu). *Icons türevleri
-  // ayrıca sol slota anlamsal ikon kilitler.
+  // Toggle varyantları: sağ slot checkbox/radio/switch/palette'e kilitli, tıklama
+  // menüyü kapatmaz (Checkboxes/Switches çoklu, Radios/Palettes tekli). *Icons
+  // türevleri ayrıca sol slota anlamsal ikon kilitler. Palettes (2026-09-07,
+  // devam 18 — kullanıcı isteği): renk seçici mantığı Radios ile birebir aynı,
+  // sadece kontrol tipi .bt-radio__dot yerine .bt-ovf-menu__ctrl-palette.
   const TOGGLE_KIND = { checkboxes: 'checkbox', checkboxesIcons: 'checkbox',
-    radios: 'radio', radiosIcons: 'radio', switches: 'switch', switchesIcons: 'switch' }[variant] || null;
-  const isToggleVar = TOGGLE_KIND != null;
-  const isIconsVar  = ['icons', 'checkboxesIcons', 'radiosIcons', 'switchesIcons'].includes(variant);
+    radios: 'radio', radiosIcons: 'radio', switches: 'switch', switchesIcons: 'switch',
+    palettes: 'palette', palettesIcons: 'palette' }[variant] || null;
+  const isToggleVar  = TOGGLE_KIND != null;
+  const isPaletteVar = variant === 'palettes' || variant === 'palettesIcons';
+  const isIconsVar   = ['icons', 'checkboxesIcons', 'radiosIcons', 'switchesIcons', 'palettesIcons'].includes(variant);
 
   // Paylaşılan (Menu Item) kontrol tipleri — variant left/right'ı kilitleyebilir
   let left  = p.left  || 'none';
@@ -14982,12 +15100,16 @@ function ovfMenuHtml(p = {}) {
   const _leftIcons  = [_ovfIconEdit, _ovfIconCopy, _ovfIconUpload, _ovfIconDownload, _ovfIconBell, _ovfIconTrash];
   // *Icons toggle türevleri: her notification etiketine anlamsal ikon (Figma 1179:22517)
   const _checkLeftIcons = [_ovfIconBell, _ovfIconCircleAlert, _ovfIconCopyCheck, _ovfIconMail, _ovfIconMsgDot, _ovfIconCircleCheck];
+  // Palettes Icons: renk zaten sağdaki swatch'la ayırt edildiği için TEK bir
+  // anlamsal ikon (palette) her item'da tekrarlanır — 1 elemanlı dizi, i%1=0.
+  const _paletteLeftIcons = [_ovfIconBlend];
   const _rightIcons = [_ovfIconCopy, _ovfIconUpload, _ovfIconDownload, _ovfIconBell, _ovfIconShare, _ovfIconShare];
   const _shortcuts  = ['Tab', 'Ctrl', 'Enter', 'Ctrl + B', 'Shift + K', 'Windows + Shift + K'];
-  const leftIconArr = (isIconsVar && isToggleVar) ? _checkLeftIcons : _leftIcons;
+  const leftIconArr = isPaletteVar ? _paletteLeftIcons : ((isIconsVar && isToggleVar) ? _checkLeftIcons : _leftIcons);
   const optFor = (type, i, side) => {
-    if (type === 'icon') { const arr = side === 'left' ? leftIconArr : _rightIcons; return { icon: arr[i % arr.length] }; }
-    if (type === 'kbd')  return { shortcut: _shortcuts[i % _shortcuts.length] };
+    if (type === 'icon')    { const arr = side === 'left' ? leftIconArr : _rightIcons; return { icon: arr[i % arr.length] }; }
+    if (type === 'kbd')     return { shortcut: _shortcuts[i % _shortcuts.length] };
+    if (type === 'palette') return { color: _OVF_PALETTE_COLORS[i % _OVF_PALETTE_COLORS.length] };
     return {};
   };
 
@@ -15003,12 +15125,36 @@ function ovfMenuHtml(p = {}) {
     return { left: g('left'), right: g('right'), desc: g('desc'), state: g('state') };
   };
 
+  // Liste TABANI — DETERMİNİSTİK, JS'te hesaplanır (2026-09-07, devam 6/7/8/15 —
+  // kullanıcı düzeltmesi + Playwright/sistem Chrome ile CANLI doğrulama; devam 8'de
+  // taban 240→220px, devam 15'te 220→160px kullanıcı isteğiyle düşürüldü, formül
+  // aynı). Basic = taban (OVF_LIST_BASE_WIDTH, 160px), her item'da GERÇEKTEN render
+  // edilen her aktif kontrol slotu (Left/Right, ne olursa olsun — Icon/Checkbox/
+  // Kbd/Avatar/…) tabana +OVF_LIST_CTRL_WIDTH ekler; TÜM item'lar arasındaki EN
+  // GENİŞ kombinasyon (maxCtrlWidth) esas alınır (liste tek bir width paylaşır) —
+  // devam 7'de 240px tabanla canlı ölçülmüştü (Basic=240, +Left=272, +Left+Right=304,
+  // Avatar=304, hepsi tam beklenen); formül değişmediği için 160px tabanla da aynı
+  // doğrulukla çalışır (Basic=160, +Left=192, +Left+Right=224, Avatar=224). Bu taban `min-width` olarak
+  // basılır; `.bt-ovf-menu__list`'in CSS'teki `max-width:320px`'i (styles.css)
+  // tabanın ÜZERİNDE metnin (`position:fixed` shrink-to-fit ile) serbestçe
+  // büyümesine izin verir — canlı doğrulandı: kısa metin tabanda kalıyor (zorla
+  // şişmiyor), 320px'i aşan metin ellipsis'e düşüyor.
+  let maxCtrlWidth = 0;
+  const _ovfTrackCtrl = (l, r) => {
+    const w = (l && l !== 'none' ? OVF_LIST_CTRL_WIDTH : 0) + (r && r !== 'none' ? OVF_LIST_CTRL_WIDTH : 0);
+    if (w > maxCtrlWidth) maxCtrlWidth = w;
+  };
+
   // Delete item — Figma'da (Sections/Destructive frame'leri) sol ikon trash-2
-  const dItem = () => ovfItemHtml({ label: 'Delete File', type: 'danger', left: left === 'icon' ? 'icon' : 'none', leftOpt: left === 'icon' ? { icon: _ovfIconTrash } : {}, right: 'none' });
+  const dItem = () => {
+    const dLeft = left === 'icon' ? 'icon' : 'none';
+    _ovfTrackCtrl(dLeft, 'none');
+    return ovfItemHtml({ label: 'Delete File', type: 'danger', left: dLeft, leftOpt: dLeft === 'icon' ? { icon: _ovfIconTrash } : {}, right: 'none' });
+  };
   const dngSection = () => ovfSectionHtml(dItem());
 
   const isAvatarVar = variant === 'avatar';
-  const LABELS = isToggleVar ? _OVF_CHECK_LABELS : _OVF_LABELS;
+  const LABELS = isPaletteVar ? _OVF_PALETTE_LABELS : (isToggleVar ? _OVF_CHECK_LABELS : _OVF_LABELS);
 
   // Avatar varyantı — hesap/kullanıcı menüsü (Figma "Overflow Menu Avatar"
   // 1182:132948). AYRI bir builder DEĞİL: aynı Group/Items/Item motorundan
@@ -15017,7 +15163,6 @@ function ovfMenuHtml(p = {}) {
   // (ikon + kısayol + versiyon), aradakiler = aksiyon listesi (ikon; 2.
   // aksiyon "Developer Mode" örnek olsun diye sağda Switch taşır).
   const mkItem = (i) => {
-    const isFirst = i === 0;
     const isSub   = variant === 'submenu' && _ovfSubIdx.has(i);
     const o = ov(i + 1);
 
@@ -15033,7 +15178,7 @@ function ovfMenuHtml(p = {}) {
       defDesc = 'mail@example.com'; defInteractive = false;
     } else if (avOut) {
       defLabel = 'Log Out'; defLeftOpt = { icon: _ovfIconLogOut };
-      defRightOpt = { shortcut: 'Ctrl + Q' }; defDesc = 'v.1.5.69 Mobydick';
+      defRightOpt = { shortcut: 'Shift + K' }; defDesc = 'v.1.5.69 Mobydick';
     } else if (avAct) {
       const ai = i - 1;
       defLabel = _OVF_AVATAR_ACTION_LABELS[ai % _OVF_AVATAR_ACTION_LABELS.length];
@@ -15041,16 +15186,42 @@ function ovfMenuHtml(p = {}) {
       if (ai === 1) defRightOpt = { on: 'off' };
     }
 
-    // Toggle varyantları: right override yoksa (veya toggle kind'iyle aynıysa) toggle item
-    const isTog = isToggleVar && !isSub && (o.right == null || o.right === TOGGLE_KIND);
-    // radio → tek seçim (yalnız idx 0 seçili); checkbox/switch → çoklu (idx 0,3)
-    const togOn = TOGGLE_KIND === 'radio' ? (i === 0 ? 'on' : 'off') : ((i % 3 === 0) ? 'on' : 'off');
-
     const eLeft  = o.left  != null ? o.left  : defLeft;
     const eRight = isSub ? 'none' : (o.right != null ? o.right : defRight);
+    // Toggle item tespiti — GENEL kural (2026-09-07, devam 17 — kullanıcı bug
+    // bildirimi: "avatar örneğinde bir menu iteminde switch var fakat interaction
+    // sağlanamıyor menü kapandığı için"): sağ slot fiilen checkbox/radio/switch/
+    // palette render ediyorsa item HER ZAMAN bir toggle item'dır — yalnız dedike
+    // Checkboxes/Radios/Switches/Palettes sayfalarında DEĞİL, herhangi bir
+    // variant'ta (Avatar'ın "Developer Mode" switch'i gibi pozisyonel varsayılan
+    // YA DA Item N properties panelinden manuel override — OVF_RIGHT_OPTS bu
+    // dördünü her variant'ta seçilebilir kılıyor). Eskiden yalnız `isToggleVar`
+    // (dedike sayfa) iken toggle sayılıyordu, bu yüzden Avatar'daki switch
+    // tıklanınca `btOvfMenuClose`'a düşüp menüyü kapatıyor, switch'in kendisi
+    // HİÇ çevrilmiyordu. Palette (devam 18) aynı genel kurala tabi.
+    const isTog = !isSub && (eRight === 'checkbox' || eRight === 'radio' || eRight === 'switch' || eRight === 'palette');
+    // Başlangıç checked state'i: dedike toggle sayfalarında demo deseni (radio/
+    // palette → TEK idx 0 seçili — ikisi de tekli seçim; checkbox/switch →
+    // idx 0,3,… çoklu) korunur; ad-hoc override'larda (avatar dahil) pozisyonel
+    // varsayılan varsa (`defRightOpt.on`) o kullanılır, yoksa güvenli varsayılan 'off'.
+    const togOn = isToggleVar
+      ? ((TOGGLE_KIND === 'radio' || TOGGLE_KIND === 'palette') ? (i === 0 ? 'on' : 'off') : ((i % 3 === 0) ? 'on' : 'off'))
+      : ((defRightOpt && defRightOpt.on) || 'off');
+    // Genişlik takibi: sağ slot isSub/isTog'da eRight='none' olsa bile GÖRSEL
+    // olarak dolu render edilir (chevron-right / checkbox-switch-radio) — bkz.
+    // ovfItemHtml'in submenu/toggle prop'ları. maxCtrlWidth bu GERÇEK dolu/boş
+    // durumunu yansıtmalı, eRight'ın ham değerini değil.
+    _ovfTrackCtrl(eLeft, (isSub || isTog) ? 'x' : eRight);
+    // Description/State de Left/Right Control ile AYNI kural: Menu Item List
+    // grubundaki paylaşılan değer artık TÜM item'lara uygulanır (yalnız ilk
+    // item'a değil) — Item grubundaki per-item override her zaman öncelikli.
+    // Avatar'ın pozisyonel metni (defDesc: kimlik e-postası / Log Out versiyonu)
+    // paylaşılan değerden önce gelir (kullanıcı geri bildirimi, 2026-09-07:
+    // "description on olduğunda tüm menu itemları tetiklemeli, state'te aynı
+    // şekilde" — eskiden yalnız isFirst item'ı tetikliyordu).
     const eDesc  = o.desc  != null ? (o.desc === 'on' ? 'Description text' : undefined)
-                                   : (defDesc !== undefined ? defDesc : (isFirst ? desc : undefined));
-    const eState = o.state != null ? o.state : (isFirst ? state : 'default');
+                                   : (defDesc !== undefined ? defDesc : desc);
+    const eState = o.state != null ? o.state : state;
     // Pozisyonel varsayılan opt'u yalnızca ÇÖZÜLEN değer hâlâ pozisyonun doğal
     // kontrol tipiyle AYNIYSA geçerlidir — bu, "inherit" (o.left==null) İLE
     // "kullanıcı/properties paneli defLeft'le aynı değeri açıkça seçti" (Item N
@@ -15058,8 +15229,12 @@ function ovfMenuHtml(p = {}) {
     // ovfSecProps/ovfItemAutoCtrl) durumlarının İKİSİNİ de kapsar. Kullanıcı
     // tipi GERÇEKTEN değiştirirse (eLeft !== defLeft) genel optFor() döngüsüne
     // (ikon/kısayol rotasyonu) düşer.
-    const eLeftOpt  = (defLeftOpt  && eLeft  === defLeft)  ? defLeftOpt  : optFor(eLeft, i, 'left');
-    const eRightOpt = (isSub || isTog) ? {} : ((defRightOpt && eRight === defRight) ? defRightOpt : optFor(eRight, i, 'right'));
+    const eLeftOpt = (defLeftOpt && eLeft === defLeft) ? defLeftOpt : optFor(eLeft, i, 'left');
+    // Palette rengi toggle yolundan (ovfItemHtml effRightOpt = {on,color}) geçtiği
+    // için isTog iken de eRightOptRaw'ı (rengi) HESAPLAMAYA devam ediyoruz — yalnız
+    // ovfItemHtml'e basılan rightOpt {}'e düşüyor (o dala toggleColor'la ayrıca gider).
+    const eRightOptRaw = (defRightOpt && eRight === defRight) ? defRightOpt : optFor(eRight, i, 'right');
+    const eRightOpt = (isSub || isTog) ? {} : eRightOptRaw;
 
     return ovfItemHtml({
       label:    defLabel,
@@ -15072,8 +15247,9 @@ function ovfMenuHtml(p = {}) {
       rightOpt: eRightOpt,
       interactive: defInteractive,
       submenu:  isSub ? _mkSubList() : undefined,
-      toggle:   isTog ? TOGGLE_KIND : undefined,
+      toggle:   isTog ? eRight : undefined,
       toggleOn: isTog ? togOn : undefined,
+      toggleColor: (isTog && eRight === 'palette') ? eRightOptRaw.color : undefined,
     });
   };
 
@@ -15110,16 +15286,20 @@ function ovfMenuHtml(p = {}) {
   if (variant === 'destructive') sections += dngSection();
   else if (dLast)                sections += ovfSectionHtml(dItem());
 
-  // Avatar: ad/e-posta/versiyon satırları diğer varyantlardan uzun — liste daha
-  // geniş bir tabanla açılır (bkz. .bt-ovf-menu__list--wide), içerik gerekirse yine büyür.
+  // Liste genişliği universal — Avatar dahil tüm variant'lar AYNI formülü
+  // kullanır, variant'a özel override YOK (2026-09-07: eski .bt-ovf-menu__list--wide
+  // kaldırıldı). Değer inline style ile basılır — CSS'teki min-width:240px
+  // (styles.css) yalnızca bu hesaplamayı ATLAYAN statik/bare-list kullanımları
+  // (ör. ovfBareListHtml, State/Controls tablo hücreleri) için fallback'tir.
   const listClasses = [];
-  if (isAvatarVar) listClasses.push('bt-ovf-menu__list--wide');
   if (flush) listClasses.push('bt-ovf-menu__list--no-divider');
+  const listMinWidth = OVF_LIST_BASE_WIDTH + maxCtrlWidth;
 
   return ovfListHtml(sections, {
     open: p.open === true,
     trigger: trigType,
     listClass: listClasses.join(' '),
+    minWidth: listMinWidth,
   });
 }
 
@@ -15129,9 +15309,16 @@ function ovfMenuCss(p = {}) {
   const dLast = p.destructiveLast === 'on';
   const grp   = p.groupLabel === 'on';
   const lines = [
-    '/* List — portal, position:fixed (JS document.body\'ye taşır) */',
+    '/* List — portal, position:fixed (JS document.body\'ye taşır). TABAN CSS\'te',
+    '   hesaplanmaz — JS\'te DETERMİNİSTİK: Basic (kontrolsüz) = 160px taban, item\'lardaki',
+    '   EN GENİŞ kontrol kombinasyonu (Left/Right, tip fark etmez) tabana +32px/slot',
+    '   ekler, inline style olarak basılır (bkz. ovfMenuHtml). Aşağıdaki min-width:160px',
+    '   yalnızca bu hesabı atlayan statik kullanımlar için fallback. TAVAN',
+    '   (max-width:320px) burada CSS\'te sabit — taban ile tavan arasında metin',
+    '   serbestçe büyür, 320px\'i aşarsa ellipsis (canlı doğrulandı). */',
     '.bt-ovf-menu__list {',
-    ln('min-width',     '180px'),
+    ln('min-width',     '160px'),
+    ln('max-width',     '320px'),
     ln('background',    'var(--bt-base-default)  /* #ffffff */'),
     ln('border',        '1px solid var(--bt-border-primary-muted)  /* #e6e6e6 */'),
     ln('border-radius', 'var(--bt-radius-sm)  /* 4px */'),
@@ -15141,7 +15328,6 @@ function ovfMenuCss(p = {}) {
     '.bt-ovf-menu__section { display: flex; flex-direction: column; padding: var(--bt-space-xs)  /* 4px */; }',
     '.bt-ovf-menu__section + .bt-ovf-menu__section { border-top: 1px solid var(--bt-border-primary-default)  /* #d4d4d4 */; }',
     ...(p.divider === 'off' ? ['/* Divider = Off */', '.bt-ovf-menu__list--no-divider .bt-ovf-menu__section + .bt-ovf-menu__section { border-top: none; }'] : []),
-    ...(p.variant === 'avatar' ? ['/* Avatar — ad/e-posta/versiyon satırları için daha geniş taban */', '.bt-ovf-menu__list--wide { min-width: 260px; }'] : []),
     '',
     ...(grp ? [
       '/* Group Label — Geist Medium, muted */',
@@ -15170,7 +15356,11 @@ function ovfMenuCss(p = {}) {
     '/* Base Row — [Left 32] + [Label flex-1] + [Right 32] */',
     '.bt-ovf-menu__item-row { display: flex; align-items: center; gap: 0; width: 100%; }',
     '.bt-ovf-menu__ctrl { width: 32px; height: 32px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: clip; color: var(--bt-icon-primary-strong)  /* #535353 */; }',
-    '.bt-ovf-menu__label { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: var(--bt-radius-lg) var(--bt-space-md)  /* 8px / 8px (kontrollü item\'da yatay 4px) */; font: var(--bt-text-xs-regular)  /* 400 12px/16px */; }',
+    '/* Label — genişlik JS\'te deterministik hesaplanır (bkz. Anatomy → List · Width):',
+    '   Basic=160px taban, her aktif kontrol slotu +32px ekler. flex-shrink:1',
+    '   (varsayılan) — Liste max-width:320px tavanını aşarsa Label GERÇEKTEN daralıp',
+    '   ellipsis gösterebilsin diye (flex-shrink:0 bunu engelliyordu, canlı tespit). */',
+    '.bt-ovf-menu__label { flex-grow: 1; flex-shrink: 1; flex-basis: auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: var(--bt-radius-lg) var(--bt-space-md)  /* 8px / 8px (kontrollü item\'da yatay 4px) */; font: var(--bt-text-xs-regular)  /* 400 12px/16px */; }',
     '.bt-ovf-menu__label-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
     '.bt-ovf-menu__label-desc { color: var(--bt-text-primary-emphasis)  /* #727272 */; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
     ...(dLast ? [
@@ -15236,47 +15426,55 @@ function ovfSecProps(o = {}) {
     );
     if (o.destructiveLast !== false)
       rows.push({ key: 'destructiveLast', label: 'Destructive Item', options: TBX_BOOL_OPTS, default: 'off', group: 'Menu' });
-    rows.push({ key: 'items', label: 'Items', options: OVF_ITEMS_OPTS, default: '6', group: 'Menu Item' });
+    rows.push({ key: 'items', label: 'Items', options: OVF_ITEMS_OPTS, default: '6', group: 'Menu Item List' });
     const sharedLeftDefault  = o.leftDefault  || 'none';
     const sharedRightDefault = o.rightDefault || 'none';
     if (o.left !== false)
-      rows.push({ key: 'left',  label: 'Left Control',  options: OVF_LEFT_OPTS,  default: sharedLeftDefault,  group: 'Menu Item' });
+      rows.push({ key: 'left',  label: 'Left Control',  options: OVF_LEFT_OPTS,  default: sharedLeftDefault,  group: 'Menu Item List' });
     if (o.right !== false)
-      rows.push({ key: 'right', label: 'Right Control', options: OVF_RIGHT_OPTS, default: sharedRightDefault, group: 'Menu Item' });
+      rows.push({ key: 'right', label: 'Right Control', options: OVF_RIGHT_OPTS, default: sharedRightDefault, group: 'Menu Item List' });
     rows.push(
-      { key: 'description', label: 'Description', options: TBX_BOOL_OPTS,  default: 'off',     group: 'Menu Item' },
-      { key: 'state',       label: 'State',       options: OVF_STATE_OPTS, default: 'default', group: 'Menu Item' },
+      { key: 'description', label: 'Description', options: TBX_BOOL_OPTS,  default: 'off',     group: 'Menu Item List' },
+      { key: 'state',       label: 'State',       options: OVF_STATE_OPTS, default: 'default', group: 'Menu Item List' },
     );
 
-    // o.variant SABİT verilmişse (her per-variant "sec" playground) Item N
-    // satırlarının varsayılanı ovfItemAutoCtrl ile GERÇEK render değerine
-    // eşitlenir — "Inherit" artık variant'ın zorladığı/pozisyona bağlı kontrolü
-    // gizlemiyor. Master'da (o.withVariant, Variant dropdown'ı canlı değişebilir)
-    // 'inherit' bilinçli olarak korunur — bu sayede Variant değiştiğinde item'lar
-    // otomatik yeni variant'a göre yeniden çözülür (bkz. ov()/mkItem).
-    const fixedVariant = !o.withVariant ? (o.variant || null) : null;
-    let sharedLeft = sharedLeftDefault, sharedRight = sharedRightDefault;
-    if (fixedVariant) {
-      const isIconsVar = ['icons', 'checkboxesIcons', 'radiosIcons', 'switchesIcons'].includes(fixedVariant);
-      if (isIconsVar) sharedLeft = 'icon';
-      if (fixedVariant === 'shortcuts') sharedRight = 'kbd';
-    }
+    // Item N satırlarının "Left Control"/"Right Control" seçenekleri her zaman
+    // 'inherit' varsayılanıyla BAŞLAR (state'e kalıcı yazılan değer bu) — bu,
+    // Menu Item grubundaki paylaşılan Left/Right Control'ün gerçekten "genele
+    // etki eden" bir varsayılan olarak çalışmasını sağlar (ovfMenuHtml/ov()
+    // her render'da state'teki 'inherit' değerini paylaşılan p.left/p.right'a
+    // düşürür). ÖNCEDEN burada ovfItemAutoCtrl'ün GERÇEK ÇÖZÜLMÜŞ değeri
+    // (örn. 'none') "default" olarak state'e yazılıyordu — bu, o item'ı ilk
+    // render'da paylaşılanla aynı GÖRÜNSE bile kalıcı bir override'a çeviriyor,
+    // sonraki Menu Item Left/Right Control değişikliklerinden kopuk kalıyordu
+    // (kullanıcı geri bildirimi, 2026-09-07: "Item bireysel doğru çalışıyor
+    // ama Menu Item geneli etkilemiyor" — kök neden buydu).
+    //
+    // 2026-09-04'teki "Inherit item'ın GERÇEKTEN neyle render edildiğini
+    // gizlemesin" isteği YİNE karşılanıyor — ama state'e yazarak değil,
+    // 'inherit' SEÇENEĞİNİN ETİKETİNİ canlı olarak o an çözülen kontrolle
+    // ("Inherit (Icon)" gibi) etiketleyerek. Etiket her render'da (Menu Item
+    // veya Variant değiştikçe) `p`'den yeniden hesaplanır, state hiç dokunulmaz.
+    const liveVariant = o.variant || p.variant || 'basic';
+    const isIconsVarLive = ['icons', 'checkboxesIcons', 'radiosIcons', 'switchesIcons', 'palettesIcons'].includes(liveVariant);
+    let liveLeft  = (o.left  !== false) ? (p.left  || sharedLeftDefault)  : sharedLeftDefault;
+    let liveRight = (o.right !== false) ? (p.right || sharedRightDefault) : sharedRightDefault;
+    if (isIconsVarLive)              liveLeft  = 'icon';
+    if (liveVariant === 'shortcuts') liveRight = 'kbd';
+    const ctrlLabel = k => (OVF_LEFT_OPTS.find(x => x.key === k) || {}).label || k;
 
     for (let k = 1; k <= n; k++) {
-      let defLeft = 'inherit', defRight = 'inherit';
-      if (fixedVariant) {
-        const auto = ovfItemAutoCtrl(fixedVariant, k - 1, n, sharedLeft, sharedRight);
-        defLeft  = auto.left;
-        defRight = auto.right;
-      }
+      const auto = ovfItemAutoCtrl(liveVariant, k - 1, n, liveLeft, liveRight);
+      const leftItemOpts  = [{ key: 'inherit', label: `Inherit (${ctrlLabel(auto.left)})`  }, ...OVF_LEFT_OPTS];
+      const rightItemOpts = [{ key: 'inherit', label: `Inherit (${ctrlLabel(auto.right)})` }, ...OVF_RIGHT_OPTS];
       // Description "Inherit" olarak kalır (somut 'on' basılmaz): "on" her zaman
       // jenerik "Description text" üretir (bkz. mkItem eDesc) — Avatar'ın kimlik/
       // Log Out satırlarındaki ÖZEL metni (e-posta/versiyon) yalnızca 'inherit'
       // (defDesc fallback'i) doğru üretir; somut 'on' bunu ezip jenerik metne
       // düşürür. Bu satırda "Inherit" GERÇEKTEN doğru anlamı taşıyor — gizleme yok.
       rows.push(
-        { key: `i${k}left`,  label: `Item ${k} · Left Control`,  options: OVF_LEFT_ITEM_OPTS,  default: defLeft,   group: 'Item' },
-        { key: `i${k}right`, label: `Item ${k} · Right Control`, options: OVF_RIGHT_ITEM_OPTS, default: defRight,  group: 'Item' },
+        { key: `i${k}left`,  label: `Item ${k} · Left Control`,  options: leftItemOpts,  default: 'inherit', group: 'Item' },
+        { key: `i${k}right`, label: `Item ${k} · Right Control`, options: rightItemOpts, default: 'inherit', group: 'Item' },
         { key: `i${k}desc`,  label: `Item ${k} · Description`,   options: OVF_DESC_ITEM_OPTS,  default: 'inherit', group: 'Item' },
         { key: `i${k}state`, label: `Item ${k} · State`,         options: OVF_STATE_ITEM_OPTS, default: 'inherit', group: 'Item' },
       );
@@ -15287,10 +15485,19 @@ function ovfSecProps(o = {}) {
 
 PAGES_WEB['components/overflow-menu'] = {
   tabs: ['Overview', 'Examples', 'CSS Properties', 'Usage'],
-  toc:  ['Anatomy', 'States', 'Controls', 'Basic', 'Submenu', 'Icons', 'Shortcuts', 'Checkboxes', 'Checkboxes Icons', 'Radios', 'Radios Icons', 'Switches', 'Switches Icons', 'Avatar', 'Sections', 'Destructive'],
+  toc:  ['Anatomy', 'States', 'Controls', 'Basic', 'Submenu', 'Shortcuts', 'Icons', 'Avatar', 'Destructive', 'Sections', 'Checkboxes', 'Checkboxes Icons', 'Radios', 'Radios Icons', 'Switches', 'Switches Icons', 'Palettes', 'Palettes Icons'],
   render(tab) {
     const title = 'Overflow Menu';
     const tk = v => `<code style="font-size:12px;font-family:var(--mono)">${v}</code>`;
+    // Controls tablosu — "Preview" kolonu hücresi (2026-09-07, devam 25 — kullanıcı
+    // isteği: "controls bölümündeki tabloda controle bir preview alanı ile
+    // gösterelim... controls olan bir component ekliyorsak bu standartta geliyor
+    // olsun"). Statik açıklama YERİNE değil, YANINA — gerçek render fonksiyonuyla
+    // (burada ovfCtrlHtml) üretilen canlı önizleme, hafif bir çerçeve içinde
+    // ortalanır. Bu desen artık STANDART: Controls/anatomi tablosu olan her yeni
+    // component sayfası aynı yerel `ctrlPreview` yardımcısını (veya birebir aynı
+    // stil) kullanmalı — bkz. add-component skill.
+    const ctrlPreview = html => `<div style="display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:6px;border:1px solid var(--bt-border-primary-muted,#e6e6e6);border-radius:var(--bt-radius-sm,4px);background:var(--bt-base-default,#fff);">${html}</div>`;
 
     // .example-viewer sarmalayıcı — statik menü demoları için (ortalı, yan yana)
     const ev = inner => `<div class="example-viewer"><div class="example-viewer-preview" style="align-items:center;"><div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap;justify-content:center;">${inner}</div></div></div>`;
@@ -15348,7 +15555,7 @@ PAGES_WEB['components/overflow-menu'] = {
     const stateSubItem  = (st, tp = 'default') => `<div style="min-width:180px;">${ovfItemHtml({ label: 'Edit File', type: tp, state: st, right: 'icon', rightOpt: { icon: _ovfIconChevronRight } })}</div>`;
     const stateKbdItem  = (st, tp = 'default') => `<div style="min-width:180px;">${ovfItemHtml({ label: 'Edit File', type: tp, state: st, right: 'kbd', rightOpt: { shortcut: 'Tab' } })}</div>`;
     const stateDngItem  = (st)                  => `<div style="min-width:180px;">${ovfItemHtml({ label: 'Delete File', type: 'danger', state: st, left: 'icon', leftOpt: { icon: _ovfIconTrash } })}</div>`;
-    const stateTogItem  = (kind, st, on = 'off', icon) => `<div style="min-width:200px;">${ovfItemHtml({ label: 'Email notifications', state: st, toggle: kind, toggleOn: on, left: icon ? 'icon' : 'none', leftOpt: icon ? { icon } : {}, interactive: false })}</div>`;
+    const stateTogItem  = (kind, st, on = 'off', icon, color, label = 'Email notifications') => `<div style="min-width:200px;">${ovfItemHtml({ label, state: st, toggle: kind, toggleOn: on, toggleColor: color, left: icon ? 'icon' : 'none', leftOpt: icon ? { icon } : {}, interactive: false })}</div>`;
     const stateChkItem  = (st, on = 'off', icon) => stateTogItem('checkbox', st, on, icon);
     const STATE_ROWS    = [['default','Default'],['hover','Hover'],['selected','Active / Selected'],['focus','Focus'],['disabled','Disabled']];
     const stateMatrix2  = (dfn, dan, h1 = 'Default type', h2 = 'Destructive type') => {
@@ -15360,18 +15567,48 @@ PAGES_WEB['components/overflow-menu'] = {
       return `<table class="token-table"><thead><tr><th>State</th><th>${col}</th></tr></thead><tbody>${rows}</tbody></table>`;
     };
 
-    // Toggle varyantı bölümü — Radios/Switches [+ Icons]. Tip B standardı:
-    // page-desc + kilitli playground + h3 States + h3 Anatomy.
+    // Toggle varyantı bölümü — Radios/Switches/Palettes [+ Icons]. Tip B
+    // standardı: page-desc + kilitli playground + h3 States + h3 Anatomy.
+    // Palette (2026-09-07, devam 18 — kullanıcı isteği: "bu palettes aslında
+    // bizim şu an playgroundda kullandığımız background color picker
+    // mantığında çalışıyor olan variant") radio'yla AYNI tekli-seçim UX'ini
+    // kullanır, kontrolü yalnızca .bt-radio__dot yerine .bt-ovf-menu__ctrl-
+    // palette. İkon/label metinleri kind'a göre farklılaştığı için (checkbox/
+    // radio/switch → bildirim etiketleri + mail ikonu; palette → renk adları +
+    // blend ikonu (2026-09-07 devam 20, kullanıcı isteğiyle palette ikonundan
+    // değiştirildi), HER İTEM'DA AYNI) bu metinler artık `_TOG_META`'nın kendi
+    // alanlarında (iconDesc/iconAnatomy/demoIcon/demoColor/demoLabel) tutuluyor.
     const _TOG_META = {
-      radio:  { name: 'DS Radio',  size: '16×16', ctrl: '.bt-radio__dot',    on: '--selected', role: 'menuitemradio',   fn: 'btOvfRadioPick', pick: 'tek seçim (aynı menüdeki diğer radio\'ları temizler)' },
-      switch: { name: 'DS Switch', size: '32×20', ctrl: '.bt-switch__track', on: '--on',       role: 'menuitemcheckbox', fn: 'btOvfToggle',    pick: 'çoklu bağımsız aç/kapat' },
+      radio:   { name: 'DS Radio',  size: '16×16', ctrl: '.bt-radio__dot',    selectedSelector: '.bt-radio__dot--selected',    role: 'menuitemradio',   fn: 'btOvfRadioPick', pick: 'tek seçim (aynı menüdeki diğer radio\'ları temizler)',
+        selectedNote: "kontrolün kendisi (Figma'da dolu/boş iki hâlli)",
+        iconDesc: `Sol ikonlar etiketlerle eşleşir (Activity→${tk('bell')} · Status→${tk('circle-alert')} · Task→${tk('copy-check')} · Email→${tk('mail')} · SMS→${tk('message-square-dot')} · Confirmation→${tk('circle-check')}); sol kontrol Label yatay padding'ini 8→4px indirir.`,
+        iconAnatomy: `Sol ${tk('.bt-ovf-menu__ctrl')} slot'u: 32×32 + ${tk('.bt-icon')} + 24×24 Lucide SVG (${tk('_checkLeftIcons')}, ${tk('_OVF_CHECK_LABELS')} ile pozisyonel). `,
+        demoIcon: _ovfIconMail, demoColor: undefined, demoLabel: 'Email notifications' },
+      switch:  { name: 'DS Switch', size: '32×20', ctrl: '.bt-switch__track', selectedSelector: '.bt-switch__track--on',       role: 'menuitemcheckbox', fn: 'btOvfToggle',    pick: 'çoklu bağımsız aç/kapat',
+        selectedNote: "kontrolün kendisi",
+        iconDesc: `Sol ikonlar etiketlerle eşleşir (Activity→${tk('bell')} · Status→${tk('circle-alert')} · Task→${tk('copy-check')} · Email→${tk('mail')} · SMS→${tk('message-square-dot')} · Confirmation→${tk('circle-check')}); sol kontrol Label yatay padding'ini 8→4px indirir.`,
+        iconAnatomy: `Sol ${tk('.bt-ovf-menu__ctrl')} slot'u: 32×32 + ${tk('.bt-icon')} + 24×24 Lucide SVG (${tk('_checkLeftIcons')}, ${tk('_OVF_CHECK_LABELS')} ile pozisyonel). `,
+        demoIcon: _ovfIconMail, demoColor: undefined, demoLabel: 'Email notifications' },
+      // Palette (2026-09-07, devam 19 — kullanıcı düzeltmesi: "Figma'da palette'in
+      // selected diye bir tasarımı yok, o zaman menu item'da zaten var olan
+      // selected'ı kullan"): swatch'ın KENDİSİNDE Figma'da olmayan bir görsel
+      // icat etmek (devam 18'deki box-shadow ring, artık kaldırıldı) yerine,
+      // component'te ZATEN var olan genel item Active/Selected state'i
+      // (.bt-ovf-menu__item--selected, --bt-base-muted, Figma'dan doğrulanmış,
+      // §21.3) reuse edilir — selectedSelector item'ı işaret eder, ctrl'i değil.
+      palette: { name: 'DS Palette Swatch', size: '20×20', ctrl: '.bt-ovf-menu__ctrl-palette', selectedSelector: '.bt-ovf-menu__item--selected', role: 'menuitemradio', fn: 'btOvfRadioPick', pick: 'tek seçim (aynı menüdeki diğer renkleri temizler)',
+        selectedNote: "item'ın kendisi (§21.3 Active/Selected state reuse — swatch'ta Figma'da olmayan ayrı bir görsel icat edilmedi)",
+        iconDesc: `Sol slotta her item'da <strong>aynı</strong> ${tk('blend')} ikonu bulunur — renk zaten sağdaki swatch'la ayırt edilir, ikon yalnızca "bu bir renk seçici" bağlamını taşır; sol kontrol Label yatay padding'ini 8→4px indirir.`,
+        iconAnatomy: `Sol ${tk('.bt-ovf-menu__ctrl')} slot'u: 32×32 + ${tk('.bt-icon')} + 24×24 Lucide ${tk('blend')} ikonu (${tk('_paletteLeftIcons')} — tek elemanlı, her item'da tekrarlanır). `,
+        demoIcon: _ovfIconBlend, demoColor: 'var(--bt-surface-brand-default)', demoLabel: 'Surface Brand Default' },
     };
     const togSection = (id, pgId, variant, kind, withIcons, figmaRef) => {
       const M = _TOG_META[kind];
-      const sIco = withIcons ? _ovfIconMail : undefined;
+      const isSingleSelect = kind === 'radio' || kind === 'palette';
+      const sIco = withIcons ? M.demoIcon : undefined;
       return `
       <h2 id="${id}">${id}</h2>
-      <p class="page-desc">${id} varyant, Checkboxes ile aynı desende ama sağ slotta <strong>${M.name}</strong> (${tk(M.ctrl)}) taşır${withIcons ? " ve her item'ın <strong>sol slotunda</strong> etiketiyle eşleşen bir Lucide ikonu bulunur" : ''} (${figmaRef}). Item ${tk('role="' + M.role + '"')} + ${tk('aria-checked')} taşır; tıklamak ${tk(M.fn)} ile ${M.pick} yapar ve <strong>menü açık kalır</strong> — ${tk('btOvfMenuClose')} çağrılmaz. ${withIcons ? `Sol ikonlar etiketlerle eşleşir (Activity→${tk('bell')} · Status→${tk('circle-alert')} · Task→${tk('copy-check')} · Email→${tk('mail')} · SMS→${tk('message-square-dot')} · Confirmation→${tk('circle-check')}); sol kontrol Label yatay padding'ini 8→4px indirir.` : "Sol slot opsiyonel; playground'da <em>Left Control</em> ile ikon eklenebilir."}</p>
+      <p class="page-desc">${id} varyant, Checkboxes ile aynı desende ama sağ slotta <strong>${M.name}</strong> (${tk(M.ctrl)}) taşır${withIcons ? " ve her item'ın <strong>sol slotunda</strong> etiketiyle eşleşen bir Lucide ikonu bulunur" : ''} (${figmaRef}). Item ${tk('role="' + M.role + '"')} + ${tk('aria-checked')} taşır; tıklamak ${tk(M.fn)} ile ${M.pick} yapar ve <strong>menü açık kalır</strong> — ${tk('btOvfMenuClose')} çağrılmaz. ${withIcons ? M.iconDesc : "Sol slot opsiyonel; playground'da <em>Left Control</em> ile ikon eklenebilir."}</p>
       ${registerPlayground({
         id: pgId,
         variants: [{ key: 'default', label: id }],
@@ -15382,16 +15619,16 @@ PAGES_WEB['components/overflow-menu'] = {
       })}
       <h3>States</h3>
       <p class="page-desc">Genel <strong>States</strong> paletiyle aynı beş satır; kontrolün seçili/seçilmemiş durumu item state'inden bağımsızdır (her state hem Off hem On gösterilir). Disabled item toggle etmez.${withIcons ? ' Sol ikon rengi item text rengiyle senkron değişir.' : ''}</p>
-      ${stateMatrix2(s => stateTogItem(kind, s, 'off', sIco), s => stateTogItem(kind, s, 'on', sIco), 'Off', 'On')}
+      ${stateMatrix2(s => stateTogItem(kind, s, 'off', sIco, M.demoColor, M.demoLabel), s => stateTogItem(kind, s, 'on', sIco, M.demoColor, M.demoLabel), 'Off', 'On')}
       <h3>Anatomy</h3>
-      <p class="page-desc">${withIcons ? `Sol ${tk('.bt-ovf-menu__ctrl')} slot'u: 32×32 + ${tk('.bt-icon')} + 24×24 Lucide SVG (${tk('_checkLeftIcons')}, ${tk('_OVF_CHECK_LABELS')} ile pozisyonel). ` : ''}Sağ ${tk('.bt-ovf-menu__ctrl')} slot'unda ${M.name} reuse (${tk(M.ctrl)} [+ ${tk(M.ctrl + M.on)}], ${M.size}). Item ${tk('role="' + M.role + '"')} + ${tk('aria-checked')} + ${tk('onclick="' + M.fn + '(event,this)"')} (Disabled hariç). ${tk('ovfItemHtml')}'de ${tk('o.toggle="' + kind + '"')} + ${tk('o.toggleOn')} verildiğinde bu yol tetiklenir.</p>
+      <p class="page-desc">${withIcons ? M.iconAnatomy : ''}Sağ ${tk('.bt-ovf-menu__ctrl')} slot'unda ${M.name} reuse (${tk(M.ctrl)}, ${M.size}) — seçili durumu ${M.selectedNote} taşır (${tk(M.selectedSelector)}). Item ${tk('role="' + M.role + '"')} + ${tk('aria-checked')} + ${tk('onclick="' + M.fn + '(event,this)"')} (Disabled hariç). ${tk('ovfItemHtml')}'de ${tk('o.toggle="' + kind + '"')} + ${tk('o.toggleOn')}${kind === 'palette' ? ` + ${tk('o.toggleColor')}` : ''} verildiğinde bu yol tetiklenir.</p>
       <table class="token-table" style="margin-top:12px">
         <thead><tr><th>Element</th><th>Class</th><th>Not</th></tr></thead>
         <tbody>
-          <tr><td>Toggle item</td><td>${tk('role="' + M.role + '"')}</td><td>${tk('onclick="' + M.fn + '"')} — menüyü kapatmaz${kind === 'radio' ? ' · liste = tek radio grubu' : ''}</td></tr>
-          <tr><td>Right ctrl</td><td>${tk(M.ctrl)}</td><td>32×32 slot içinde ${M.name} (${M.size})</td></tr>
-          <tr><td>Seçili</td><td>${tk(M.ctrl + M.on)}</td><td>${tk(M.fn)} ${kind === 'radio' ? 'tek item\'da tutar' : 'çevirir'}; ${tk('aria-checked')} eşlenir</td></tr>
-          ${withIcons ? `<tr><td>Left ctrl</td><td>${tk('.bt-ovf-menu__ctrl')} → ${tk('.bt-icon')}</td><td>anlamsal ikon · Label yatay padding ${tk('--bt-space-xs')} (4px)</td></tr>` : ''}
+          <tr><td>Toggle item</td><td>${tk('role="' + M.role + '"')}</td><td>${tk('onclick="' + M.fn + '"')} — menüyü kapatmaz${isSingleSelect ? ' · liste = tek seçim grubu' : ''}</td></tr>
+          <tr><td>Right ctrl</td><td>${tk(M.ctrl)}</td><td>32×32 slot içinde ${M.name} (${M.size})${kind === 'palette' ? ` — renk ${tk('style="background:..."')} inline, bkz. ${tk('_OVF_PALETTE_COLORS')}` : ''}</td></tr>
+          <tr><td>Seçili</td><td>${tk(M.selectedSelector)}</td><td>${tk(M.fn)} ${isSingleSelect ? 'tek item\'da tutar' : 'çevirir'}; ${tk('aria-checked')} eşlenir${kind === 'palette' ? ` — ${M.selectedNote}` : ''}</td></tr>
+          ${withIcons ? `<tr><td>Left ctrl</td><td>${tk('.bt-ovf-menu__ctrl')} → ${tk('.bt-icon')}</td><td>${kind === 'palette' ? "sabit blend ikonu" : 'anlamsal ikon'} · Label yatay padding ${tk('--bt-space-xs')} (4px)</td></tr>` : ''}
         </tbody>
       </table>`;
     };
@@ -15405,7 +15642,9 @@ PAGES_WEB['components/overflow-menu'] = {
           <tr><td>List</td><td>Border</td><td>${tk('--bt-border-primary-muted')}</td><td>1px · #e6e6e6</td></tr>
           <tr><td>List</td><td>Border-radius</td><td>${tk('--bt-radius-sm')}</td><td>4px</td></tr>
           <tr><td>List</td><td>Box-shadow</td><td>${tk('--bt-shadow-sm')}</td><td>0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.10)</td></tr>
-          <tr><td>List</td><td>Min-width</td><td>—</td><td>180px</td></tr>
+          <tr><td>List</td><td>Width (taban)</td><td>—</td><td>JS'te deterministik: 160px taban + item'lardaki en geniş kontrol kombinasyonuna göre +32px/slot (Left/Right, tip fark etmez) — inline ${tk('min-width')} olarak basılır, bkz. ${tk('OVF_LIST_BASE_WIDTH')}/${tk('OVF_LIST_CTRL_WIDTH')}</td></tr>
+          <tr><td>List</td><td>Width (tavan)</td><td>—</td><td>${tk('max-width:320px')} — tabanın üzerinde metin serbestçe büyür (${tk('position:fixed')} shrink-to-fit), 320px'i aşarsa ellipsis'e düşer (canlı doğrulandı)</td></tr>
+          <tr><td>Label</td><td>Width</td><td>—</td><td>${tk('flex-shrink:1')} (varsayılan) — kontrol slotlarına GÖRE değil, Liste'nin (JS'in ayırdığı) tabanına göre boyutlanır; Liste ${tk('max-width:320px')} tavanını aşarsa Label gerçekten daralır ve ellipsis gösterir (canlı doğrulandı)</td></tr>
           <tr><td>Section (${tk('.bt-ovf-menu__section')})</td><td>Padding</td><td>${tk('--bt-space-xs')}</td><td>4px</td></tr>
           <tr><td>Section + Section (Line)</td><td>Border-top</td><td>${tk('--bt-border-primary-default')}</td><td>1px · #d4d4d4 · playground <em>Group</em> ≥ 2 iken görünür</td></tr>
           <tr><td>List · Divider Off (${tk('.bt-ovf-menu__list--no-divider')})</td><td>Section border-top</td><td>—</td><td>${tk('none')} — bölümler arası çizgi kaldırılır</td></tr>
@@ -15421,6 +15660,7 @@ PAGES_WEB['components/overflow-menu'] = {
           <tr><td>Item · Destructive (${tk('.bt-ovf-menu__item--danger')})</td><td>Color</td><td>${tk('--bt-text-error-default')}</td><td>#b31d38</td></tr>
           <tr><td>Item · Destructive Hover</td><td>Background</td><td>${tk('--bt-error-subtle')}</td><td>#fde6e6</td></tr>
           <tr><td>Item · Destructive Active / Selected</td><td>Background</td><td>${tk('--bt-error-muted')}</td><td>#fbd0d2</td></tr>
+          <tr><td>Item · Destructive Focus</td><td>Background / Box-shadow</td><td>${tk('--bt-error-subtle')} / Focus Ring/error</td><td>#fde6e6 / ${tk('0 0 0 3px rgba(232,75,91,.24)')} — Default'un nötr gri ringinden AYRI, kırmızı tonlu (2026-09-07 devam 24'te düzeltildi — önceden nötr ring sızıyordu)</td></tr>
           <tr><td>Item · Destructive Disabled</td><td>Color</td><td>${tk('--bt-text-error-muted')}</td><td>#fbd0d2</td></tr>
           <tr><td>Label (${tk('.bt-ovf-menu__label')})</td><td>Padding</td><td>${tk('--bt-radius-lg')} / ${tk('--bt-space-md')}</td><td>8px / 8px · <strong>sol kontrol varsa</strong> yatay ${tk('--bt-space-xs')} (4px) — Figma: Content=Left Control &amp; Label → [8,4,8,4]</td></tr>
           <tr><td>Label</td><td>Font</td><td>${tk('--bt-text-xs-regular')}</td><td>400 · 12px/16px</td></tr>
@@ -15436,7 +15676,7 @@ PAGES_WEB['components/overflow-menu'] = {
           <tr><td>Control · Button</td><td>—</td><td>${tk('.bt-btn--2xs.bt-btn--base-flat.bt-btn--icon')}</td><td>20×20 · gerçek DS component reuse</td></tr>
           <tr><td>Trigger</td><td>—</td><td>${tk('.bt-btn--sm')}</td><td>icon-only (⋯) veya kısa metinli ${tk('.bt-btn--base-outline')}</td></tr>
           <tr><td>Submenu parent (${tk('.bt-ovf-menu__item--has-sub')})</td><td>Right ctrl / State</td><td>${tk('--bt-icon-primary-strong')} / ${tk('.bt-ovf-menu__item--selected')}</td><td>chevron-right 24×24 · alt menü açıkken zemin ${tk('--bt-base-muted')} (#e6e6e6)</td></tr>
-          <tr><td>Nested list (${tk('.bt-ovf-menu__list--sub')})</td><td>Style / z-index</td><td>= ${tk('.bt-ovf-menu__list')}</td><td>beyaz · ${tk('--bt-border-primary-muted')} · ${tk('--bt-shadow-sm')} · ${tk('--bt-radius-sm')} · min-width 180px · z-index 201</td></tr>
+          <tr><td>Nested list (${tk('.bt-ovf-menu__list--sub')})</td><td>Style / z-index</td><td>= ${tk('.bt-ovf-menu__list')}</td><td>beyaz · ${tk('--bt-border-primary-muted')} · ${tk('--bt-shadow-sm')} · ${tk('--bt-radius-sm')} · hug (min-width 160px) · z-index 201</td></tr>
           <tr><td>Nested list · konum</td><td>position</td><td>—</td><td>JS ${tk('position:fixed')} portal — parent sağ kenarı, tetikleyici item hizası; sığmazsa sola/yukarı flip</td></tr>
         </tbody>
       </table>
@@ -15456,7 +15696,7 @@ PAGES_WEB['components/overflow-menu'] = {
       <h2>Don't</h2>
       <ul>
         <li>Checkboxes item'ına ayrıca kendi ${tk('onclick')} aksiyonu bağlama veya tıklamada menüyü kapatma — item yalnızca kendi checkbox'ını çevirir</li>
-        <li>İki satıra taşan uzun etiket yazma — ${tk('.bt-ovf-menu__label-text')} ${tk('white-space:nowrap')} + ellipsis uygular, liste yatayda gereksiz genişlemez (ikinci bilgi için ${tk('.bt-ovf-menu__label-desc')} satırını kullan)</li>
+        <li>İki satıra taşan uzun etiket yazma — ${tk('.bt-ovf-menu__label-text')} ${tk('white-space:nowrap')} uygular; liste taban (kontrol slotlarına göre) ile ${tk('max-width:320px')} tavanı arasında metne göre büyür, 320px'i aşan etiket ellipsis'e düşer (ikinci bilgi için ${tk('.bt-ovf-menu__label-desc')} satırını kullan)</li>
         <li>Submenu'yü ikiden fazla seviye derinleştirme — üçüncü seviyeden sonrası tarama zorlaşır; derin hiyerarşi için ayrı bir dialog/panel kullan</li>
         <li>Bir submenu parent item'ına hem alt menü hem de kendi ${tk('onclick')} aksiyonu bağlama — chevron'lu item yalnız alt menüyü açar, aksiyonu yaprak öğelere bırak</li>
         <li>Menüyü birincil aksiyon için kullanma — sık kullanılan aksiyonlar doğrudan görünür bir buton olmalı</li>
@@ -15483,10 +15723,16 @@ PAGES_WEB['components/overflow-menu'] = {
              ['Export File','Ctrl + B'],['Add Reminder','Shift + K'],['Delete File','Windows + Shift + K']]
             .map(([l,sc]) => ovfItemHtml({ label: l, right: 'kbd', rightOpt: { shortcut: sc } })).join('')
           )))}</td></tr>
-          ${[['Checkboxes','checkbox',false],['Checkboxes Icons','checkbox',true],['Radios','radio',false],['Radios Icons','radio',true],['Switches','switch',false],['Switches Icons','switch',true]].map(([name, kind, withIco]) => {
+          ${[['Checkboxes','checkbox',false],['Checkboxes Icons','checkbox',true],['Radios','radio',false],['Radios Icons','radio',true],['Switches','switch',false],['Switches Icons','switch',true],['Palettes','palette',false],['Palettes Icons','palette',true]].map(([name, kind, withIco]) => {
+            const isPalette = kind === 'palette';
+            const labels = isPalette ? _OVF_PALETTE_LABELS.slice(0, 6) : _OVF_CHECK_LABELS;
             const ics = [_ovfIconBell, _ovfIconCircleAlert, _ovfIconCopyCheck, _ovfIconMail, _ovfIconMsgDot, _ovfIconCircleCheck];
-            const on = i => kind === 'radio' ? (i === 0 ? 'on' : 'off') : (i % 3 === 0 ? 'on' : 'off');
-            const rows = _OVF_CHECK_LABELS.map((l, i) => ovfItemHtml({ label: l, toggle: kind, toggleOn: on(i), ...(withIco ? { left: 'icon', leftOpt: { icon: ics[i] } } : {}) })).join('');
+            const on = i => (kind === 'radio' || isPalette) ? (i === 0 ? 'on' : 'off') : (i % 3 === 0 ? 'on' : 'off');
+            const rows = labels.map((l, i) => ovfItemHtml({
+              label: l, toggle: kind, toggleOn: on(i),
+              toggleColor: isPalette ? _OVF_PALETTE_COLORS[i % _OVF_PALETTE_COLORS.length] : undefined,
+              ...(withIco ? { left: 'icon', leftOpt: { icon: isPalette ? _ovfIconBlend : ics[i] } } : {}),
+            })).join('');
             return `<tr><td>${name}</td><td>${one(ovfBareListHtml(ovfSectionHtml(rows)))}</td></tr>`;
           }).join('')}
           <tr><td>Avatar</td><td>${one(ovfBareListHtml(
@@ -15497,7 +15743,7 @@ PAGES_WEB['components/overflow-menu'] = {
                 : ovfItemHtml({ label: l, left: 'icon', leftOpt: { icon: _OVF_AVATAR_ACTION_ICONS[i] } })
               ).join('')
             ) +
-            ovfSectionHtml(ovfItemHtml({ label: 'Log Out', desc: 'v.1.5.69 Mobydick', left: 'icon', leftOpt: { icon: _ovfIconLogOut }, right: 'kbd', rightOpt: { shortcut: 'Ctrl + Q' } }))
+            ovfSectionHtml(ovfItemHtml({ label: 'Log Out', desc: 'v.1.5.69 Mobydick', left: 'icon', leftOpt: { icon: _ovfIconLogOut }, right: 'kbd', rightOpt: { shortcut: 'Shift + K' } }))
           ))}</td></tr>
           <tr><td>Sections</td><td>${one(ovfBareListHtml(
             ovfSectionHtml(ovfGroupLabelHtml('File') + ovfItemHtml({ label: 'Edit File' }) + ovfItemHtml({ label: 'Copy File' })) +
@@ -15527,7 +15773,7 @@ PAGES_WEB['components/overflow-menu'] = {
         css:  (v, p) => ovfMenuCss(p),
       })}
 
-      <p class="page-desc">Overflow Menu, sınırlı alanda çok sayıda aksiyonu gizleyen bir overlay bileşenidir. Tetikleyici bir ${tk('.bt-btn')} (icon-only ⋯ ya da Figma "Example"'daki gibi kısa metinli ${tk('.bt-btn--base-outline')}); tıklandığında ${tk('.bt-ovf-menu__list')} ${tk('position:fixed')} ile viewport'ta konumlanır ve ${tk('document.body')}'ye portal'lanır (ata elementlerdeki ${tk('overflow:hidden')} / ${tk('transform')}'dan bağımsız). Dışarı tıklama ve scroll menüyü kapatır; her öğe tıklandığında menü kapanır. Yapı Figma'yla birebir: <strong>List → Section → [Group Label] + Item</strong>. Playground'da <strong>Menu</strong> grubu menünün geneline etki eder — <em>Group</em> body item'larını 1–3 ${tk('.bt-ovf-menu__section')}'a böler, <em>Divider</em> = Off bölümler arası çizgiyi kaldırır (${tk('.bt-ovf-menu__list--no-divider')}). <strong>Menu Item</strong> grubu tüm item'lar için paylaşılan varsayılanları, <strong>Item</strong> grubu ise 1–6 arası her item'ı tek tek override eder (her override <em>Inherit</em> = paylaşılan değer).</p>
+      <p class="page-desc">Overflow Menu, sınırlı alanda çok sayıda aksiyonu gizleyen bir overlay bileşenidir. Tetikleyici bir ${tk('.bt-btn')} (icon-only ⋯ ya da Figma "Example"'daki gibi kısa metinli ${tk('.bt-btn--base-outline')}); tıklandığında ${tk('.bt-ovf-menu__list')} ${tk('position:fixed')} ile viewport'ta konumlanır ve ${tk('document.body')}'ye portal'lanır (ata elementlerdeki ${tk('overflow:hidden')} / ${tk('transform')}'dan bağımsız). Dışarı tıklama ve scroll menüyü kapatır; her öğe tıklandığında menü kapanır. Yapı Figma'yla birebir: <strong>List → Section → [Group Label] + Item</strong>. Playground'da <strong>Menu</strong> grubu menünün geneline etki eder — <em>Group</em> body item'larını 1–3 ${tk('.bt-ovf-menu__section')}'a böler, <em>Divider</em> = Off bölümler arası çizgiyi kaldırır (${tk('.bt-ovf-menu__list--no-divider')}). <strong>Menu Item List</strong> grubu — adından da anlaşılacağı gibi — menünün TÜMÜNE (tüm item'lara birden) uygulanan paylaşılan varsayılanları kontrol eder (Left/Right Control, Description, State dahil); <strong>Item</strong> grubu ise 1–6 arası her item'ı tek tek override eder (her override <em>Inherit</em> = Menu Item List'teki paylaşılan değer).</p>
 
       <h2 id="Anatomy">Anatomy</h2>
       <p class="page-desc"><strong>Base Overflow Menu Item</strong> (Figma ${tk('1090:133293')}) yatay bir flex satırıdır — üç bölüm: <strong>Left Control</strong> (32×32 slot) + <strong>Label</strong> (flex-1, dikey ortalı) + <strong>Right Control</strong> (32×32 slot). Menü <strong>item</strong>'ı (${tk('.bt-ovf-menu__item')}, Figma ${tk('1112:131632')}) bu satırı sarar ve state + Type (Default/Destructive) katmanını, ${tk('radius-sm')} + ${tk('overflow:clip')} ile ekler. Item'lar <strong>Section</strong> (${tk('.bt-ovf-menu__section')}, 4px padding) içinde dizilir; bir menüde birden çok section olabilir, aralarına ${tk('border-top')} (Figma "Line") girer ve her section başına opsiyonel bir <strong>Group Label</strong> (${tk('.bt-ovf-menu__group-label')}, Geist Medium, muted) konur. Hepsi <strong>List</strong> (${tk('.bt-ovf-menu__list')}) içinde — beyaz zemin, ${tk('--bt-border-primary-muted')} kenar, ${tk('--bt-shadow-sm')}, portal'lı ${tk('position:fixed')}.</p>
@@ -15535,7 +15781,7 @@ PAGES_WEB['components/overflow-menu'] = {
         <thead><tr><th>Figma layer</th><th>Class</th><th>Rol</th></tr></thead>
         <tbody>
           <tr><td>Trigger</td><td>${tk('.bt-btn.bt-btn--sm')}</td><td>Gerçek Button reuse — icon-only ⋯ veya ${tk('.bt-btn--base-outline')} "Open Menu"</td></tr>
-          <tr><td>Overflow Menu List</td><td>${tk('.bt-ovf-menu__list')}</td><td>Portal'lı liste — ${tk('position:fixed')}, z-index 200, ${tk('--bt-shadow-sm')}, min-width 180px</td></tr>
+          <tr><td>Overflow Menu List</td><td>${tk('.bt-ovf-menu__list')}</td><td>Portal'lı liste — ${tk('position:fixed')}, z-index 200, ${tk('--bt-shadow-sm')}, genişlik JS'te deterministik hesaplanır (160px taban + kontrol slotu başına 32px, bkz. Anatomy)</td></tr>
           <tr><td>Section</td><td>${tk('.bt-ovf-menu__section')}</td><td>4px padding grup — playground <em>Group</em> (1–3) kaç section olacağını verir; ${tk('section + section')} → ${tk('border-top')} (Line), <em>Divider=Off</em> → ${tk('.bt-ovf-menu__list--no-divider')} çizgiyi kaldırır</td></tr>
           <tr><td>Overflow Menu Item Group Label</td><td>${tk('.bt-ovf-menu__group-label')}</td><td>Bölüm başlığı — Geist Medium 12/16, ${tk('--bt-text-primary-emphasis')}, padding 4px/8px (dikey/yatay)</td></tr>
           <tr><td>Overflow Menu Item</td><td>${tk('.bt-ovf-menu__item')}</td><td>State + Type katmanı — ${tk('radius-sm')}, ${tk('overflow:clip')}, padding yok</td></tr>
@@ -15549,7 +15795,7 @@ PAGES_WEB['components/overflow-menu'] = {
       </table>
 
       <h2 id="States">States</h2>
-      <p class="page-desc">Item altı state taşır; <strong>Type=Default</strong> ve <strong>Type=Destructive</strong> ayrı paletlerdir (Figma <em>Overflow Menu Item</em> set'inden birebir doğrulandı). <strong>Default:</strong> Hover ${tk('--bt-base-subtle')} (#f5f5f5), Active <strong>=</strong> Selected ${tk('--bt-base-muted')} (#e6e6e6), Focus beyaz zemin + nötr gri ring (${tk('0 0 0 3px rgba(212,212,212,.5)')} — brand değil, proje standardı), Disabled metin ${tk('--bt-text-primary-muted')} (#a3a3a3) + ${tk('pointer-events:none')}. <strong>Destructive:</strong> metin/ikon ${tk('--bt-text-error-default')} (#b31d38); Hover ${tk('--bt-error-subtle')} (#fde6e6), Active/Selected/Focus zemin ${tk('--bt-error-muted')}/(#fbd0d2) &amp; (#fde6e6), Disabled metin ${tk('--bt-text-error-muted')} (#fbd0d2). Description satırı hiçbir state'te renk değiştirmez (${tk('--bt-text-primary-emphasis')}). Not: Selected ile Active görsel olarak birebir aynıdır.</p>
+      <p class="page-desc">Item altı state taşır; <strong>Type=Default</strong> ve <strong>Type=Destructive</strong> ayrı paletlerdir (Figma <em>Overflow Menu Item</em> set'inden birebir doğrulandı). <strong>Default:</strong> Hover ${tk('--bt-base-subtle')} (#f5f5f5), Active <strong>=</strong> Selected ${tk('--bt-base-muted')} (#e6e6e6), Focus beyaz zemin + nötr gri ring (${tk('0 0 0 3px rgba(212,212,212,.5)')} — brand değil, proje standardı), Disabled metin ${tk('--bt-text-primary-muted')} (#a3a3a3) + ${tk('pointer-events:none')}. <strong>Destructive:</strong> metin/ikon ${tk('--bt-text-error-default')} (#b31d38); Hover ${tk('--bt-error-subtle')} (#fde6e6), Active/Selected zemin ${tk('--bt-error-muted')} (#fbd0d2), Focus zemin ${tk('--bt-error-subtle')} (#fde6e6) + AYRI kırmızı tonlu ring (${tk('0 0 0 3px rgba(232,75,91,.24)')} — Default'un nötr grisinden farklı, Figma "Focus Ring/error"), Disabled metin ${tk('--bt-text-error-muted')} (#fbd0d2). Description satırı hiçbir state'te renk değiştirmez (${tk('--bt-text-primary-emphasis')}). Not: Selected ile Active görsel olarak birebir aynıdır.</p>
       <table class="token-table">
         <thead><tr><th>State</th><th>Default</th><th>Destructive</th></tr></thead>
         <tbody>
@@ -15562,19 +15808,19 @@ PAGES_WEB['components/overflow-menu'] = {
       </table>
 
       <h2 id="Controls">Controls</h2>
-      <p class="page-desc">Sol veya sağ slot (${tk('.bt-ovf-menu__ctrl')}, 32×32) dokuz tipten birini alır ve her biri <strong>gerçek DS component'i</strong> reuse eder — slot yalnız kutu + ortalama sağlar, özel stil yok. Ayrıntılı önizleme için <strong>Examples → Controls</strong>.</p>
+      <p class="page-desc">Sol veya sağ slot (${tk('.bt-ovf-menu__ctrl')}, 32×32) dokuz tipten birini alır ve her biri <strong>gerçek DS component'i</strong> reuse eder — slot yalnız kutu + ortalama sağlar, özel stil yok. <strong>Preview</strong> kolonu her tipin gerçek render'ını (${tk('ovfCtrlHtml')} ile, kod örneğiyle AYNI fonksiyon) canlı gösterir — statik bir görsel değil. Ayrıntılı önizleme için <strong>Examples → Controls</strong>.</p>
       <table class="token-table" style="margin-top:12px">
-        <thead><tr><th>Type</th><th>Reuse</th><th>Boyut</th></tr></thead>
+        <thead><tr><th>Type</th><th>Preview</th><th>Reuse</th><th>Boyut</th></tr></thead>
         <tbody>
-          <tr><td>Icon</td><td>24×24 inline SVG (${tk('.bt-icon')}), ${tk('--bt-icon-primary-strong')}</td><td>24 (slotu doldurmaz)</td></tr>
-          <tr><td>Checkbox</td><td>${tk('.bt-checkbox__box')} (+ ${tk('.bt-checkbox__check')})</td><td>16×16</td></tr>
-          <tr><td>Radio</td><td>${tk('.bt-radio__dot')}</td><td>16×16</td></tr>
-          <tr><td>Switch</td><td>${tk('.bt-switch__track')} + ${tk('.bt-switch__thumb')}</td><td>32×20</td></tr>
-          <tr><td>Avatar</td><td>${tk('.bt-avatar.bt-avatar--xs')} + ${tk('.bt-avatar__initials')}</td><td>28×28</td></tr>
-          <tr><td>Kbd</td><td>${tk('kbd.bt-kbd')}</td><td>hug</td></tr>
-          <tr><td>Palette</td><td>${tk('.bt-ovf-menu__ctrl-palette')} — 1px ${tk('--bt-border-primary-default')}, ${tk('--bt-radius-sm')}</td><td>20×20</td></tr>
-          <tr><td>Button</td><td>${tk('.bt-btn.bt-btn--2xs.bt-btn--base-flat.bt-btn--icon')}</td><td>20×20</td></tr>
-          <tr><td>Blank</td><td>— (boş slot)</td><td>32×32 hizalayıcı</td></tr>
+          <tr><td>Icon</td><td>${ctrlPreview(ovfCtrlHtml('icon', { icon: _ovfIconEdit }))}</td><td>24×24 inline SVG (${tk('.bt-icon')}), ${tk('--bt-icon-primary-strong')}</td><td>24 (slotu doldurmaz)</td></tr>
+          <tr><td>Checkbox</td><td>${ctrlPreview(ovfCtrlHtml('checkbox', { on: 'on' }))}</td><td>${tk('.bt-checkbox__box')} (+ ${tk('.bt-checkbox__check')})</td><td>16×16</td></tr>
+          <tr><td>Radio</td><td>${ctrlPreview(ovfCtrlHtml('radio', { on: 'on' }))}</td><td>${tk('.bt-radio__dot')}</td><td>16×16</td></tr>
+          <tr><td>Switch</td><td>${ctrlPreview(ovfCtrlHtml('switch', { on: 'on' }))}</td><td>${tk('.bt-switch__track')} + ${tk('.bt-switch__thumb')}</td><td>32×20</td></tr>
+          <tr><td>Avatar</td><td>${ctrlPreview(ovfCtrlHtml('avatar', { initials: 'EG' }))}</td><td>${tk('.bt-avatar.bt-avatar--xs')} + ${tk('.bt-avatar__initials')}</td><td>28×28</td></tr>
+          <tr><td>Kbd</td><td>${ctrlPreview(ovfCtrlHtml('kbd', { shortcut: 'Ctrl + K' }))}</td><td>${tk('kbd.bt-kbd')}</td><td>hug</td></tr>
+          <tr><td>Palette</td><td>${ctrlPreview(ovfCtrlHtml('palette', { color: _OVF_PALETTE_COLORS[7] }))}</td><td>${tk('.bt-ovf-menu__ctrl-palette')} — 1px ${tk('--bt-border-primary-default')}, ${tk('--bt-radius-sm')}</td><td>20×20</td></tr>
+          <tr><td>Button</td><td>${ctrlPreview(ovfCtrlHtml('button'))}</td><td>${tk('.bt-btn.bt-btn--2xs.bt-btn--base-flat.bt-btn--icon')}</td><td>20×20</td></tr>
+          <tr><td>Blank</td><td>${ctrlPreview(ovfCtrlHtml('blank'))}</td><td>— (boş slot)</td><td>32×32 hizalayıcı</td></tr>
         </tbody>
       </table>
 
@@ -15632,6 +15878,34 @@ PAGES_WEB['components/overflow-menu'] = {
         </tbody>
       </table>
 
+      <h2 id="Shortcuts">Shortcuts</h2>
+      <p class="page-desc">Shortcuts varyant, her item'ın sağ slotuna klavye kısayolunu ${tk('.bt-kbd')} / ${tk('.bt-kbd-combo')} ile gösterir. Figma'daki Kbd Shortcuts frame'inde kullanılan kısayollar sırasıyla: Tab · Ctrl · ⏎ · Ctrl+B · ⇧+K · ⊞+⇧+K. Tek tuş kısayolları ${tk('.bt-kbd')} ile, çoklu tuş kombinasyonları ${tk('.bt-kbd-combo')} + ${tk('.bt-kbd-combo__plus')} deseniyle render edilir. Kbd bir kısayolu 32px'e sığmayacak kadar geniş olabildiği için (Figma'da 26–82px) sağ slot ${tk('.bt-ovf-menu__ctrl--hug')} alır: ${tk('width:auto')} + ${tk('min-width:32px')}, klips yok — kbd tam görünür. Sağ kontrol AKTİF olduğu için (kbd dahil, tip fark etmez) liste genişliği JS'te +32px alır — ${tk('.bt-ovf-menu__label')} bu tabanı dolduruyor, ${tk('max-width:320px')} tavanını aşan bir kısayol+etiket kombinasyonu olursa Label gerçekten daralıp ellipsis gösterir.</p>
+      ${registerPlayground({
+        id: 'pgd-ovf-shortcuts-sec',
+        variants: [{ key: 'default', label: 'Shortcuts' }],
+        props: ovfSecProps({ right: false, variant: 'shortcuts' }),
+        preview: (v, p) => `<div style="display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;min-height:280px;">${ovfMenuHtml({ ...p, variant: 'shortcuts' })}</div>`,
+        code:    (v, p) => ovfMenuHtml({ ...p, variant: 'shortcuts' }),
+        css:     (v, p) => ovfMenuCss({ ...p, variant: 'shortcuts' }),
+      })}
+
+      <h3>States</h3>
+      <p class="page-desc">Shortcuts item — sağ slotta ${tk('.bt-kbd')} kısayol — için beş state. Kbd rengi Disabled state'te item text rengiyle birlikte solar (${tk('--bt-text-primary-muted')}). Playground'da <em>State</em> ilk item'a uygulanır.</p>
+      ${stateMatrix2(st => stateKbdItem(st, 'default'), st => stateKbdItem(st, 'danger'))}
+
+      <h3>Anatomy</h3>
+      <p class="page-desc">Shortcuts item Basic'e ek olarak sağ ${tk('.bt-ovf-menu__ctrl--hug')} slot'u barındırır; içine ${tk('.bt-kbd')} (tek tuş) veya ${tk('.bt-kbd-combo')} + ${tk('.bt-kbd-combo__plus')} (birden fazla tuş) girer. Diğer kontrol tipleri 32×32 sabittir; Kbd slotu Figma'da ${tk('Type=Kdb')} → ${tk('layoutSizingHorizontal:HUG')} olduğu için ${tk('width:auto; min-width:32px; overflow:visible')} taşır — kbd hiç klipslenmez, tam görünür; yerine ${tk('.bt-ovf-menu__label')} daralır. Kbd bileşeni gerçek DS component reuse'dur.</p>
+      <table class="token-table" style="margin-top:12px">
+        <thead><tr><th>Element</th><th>Class</th><th>Not</th></tr></thead>
+        <tbody>
+          <tr><td>Item</td><td>${tk('.bt-ovf-menu__item')}</td><td>Basic'le aynı</td></tr>
+          <tr><td>Item row</td><td>${tk('.bt-ovf-menu__item-row')}</td><td>flex — Label + Right ctrl</td></tr>
+          <tr><td>Right ctrl (slot)</td><td>${tk('.bt-ovf-menu__ctrl--hug')}</td><td>${tk('width:auto')} · ${tk('min-width:32px')} · ${tk('overflow:visible')} — 32px'e sığmayan kbd tam görünür</td></tr>
+          <tr><td>Right ctrl (tek tuş)</td><td>${tk('.bt-ovf-menu__ctrl--hug')} → ${tk('kbd.bt-kbd')}</td><td>Mono 12px · ${tk('--bt-base-subtle')} arka plan · ${tk('--bt-text-primary-emphasis')}</td></tr>
+          <tr><td>Right ctrl (kombo)</td><td>${tk('.bt-ovf-menu__ctrl--hug')} → ${tk('.bt-kbd-combo')}</td><td>inline-flex; her tuş ayrı ${tk('.bt-kbd')}, aralarında ${tk('.bt-kbd-combo__plus')} "+"</td></tr>
+        </tbody>
+      </table>
+
       <h2 id="Icons">Icons</h2>
       <p class="page-desc">Icons varyant, her item'ın sol slotuna bir eylem ikonu yerleştirir; ikon eylemin anlamını hızlıca tarar ve yoğun içerikli menülerde kullanılır. Figma'daki Icons frame'inde soldan sağa pen-line · copy · upload · download · bell · trash-2 ikonları bire bir kullanılmaktadır. Sol ctrl varlığı Label yatay padding'ini 8→4px'e indirir (Figma [8,4,8,4] kutu modeli). Sağ slot isteğe bağlı herhangi bir kontrolü alabilir.</p>
       ${registerPlayground({
@@ -15659,31 +15933,89 @@ PAGES_WEB['components/overflow-menu'] = {
         </tbody>
       </table>
 
-      <h2 id="Shortcuts">Shortcuts</h2>
-      <p class="page-desc">Shortcuts varyant, her item'ın sağ slotuna klavye kısayolunu ${tk('.bt-kbd')} / ${tk('.bt-kbd-combo')} ile gösterir. Figma'daki Kbd Shortcuts frame'inde kullanılan kısayollar sırasıyla: Tab · Ctrl · ⏎ · Ctrl+B · ⇧+K · ⊞+⇧+K. Tek tuş kısayolları ${tk('.bt-kbd')} ile, çoklu tuş kombinasyonları ${tk('.bt-kbd-combo')} + ${tk('.bt-kbd-combo__plus')} deseniyle render edilir. Kbd bir kısayolu 32px'e sığmayacak kadar geniş olabildiği için (Figma'da 26–82px) sağ slot ${tk('.bt-ovf-menu__ctrl--hug')} alır: ${tk('width:auto')} + ${tk('min-width:32px')}, klips yok — kbd tam görünür, ${tk('.bt-ovf-menu__label')} (${tk('flex:1; min-width:0')}) daralıp ellipsis yapar. Liste ${tk('min-width:180px')}'ten sonra genişleyerek satırı barındırır.</p>
+      <h2 id="Avatar">Avatar</h2>
+      <p class="page-desc">Avatar varyant, bir <strong>hesap / kullanıcı menüsü</strong>dür (Figma ${tk('1212:132236')}) — bir tetikleyici avatarın altında açılır. <strong>Ayrı bir builder değil</strong>: tıpkı diğer varyantlar gibi aynı ${tk('Group')} / ${tk('Items')} / ${tk('Item N')} motorundan geçer, yalnız <em>pozisyona göre varsayılan</em> değişir — 1. item her zaman kimlik (${tk('.bt-avatar--xs')} 28×28 "EG" + ad + e-posta, ${tk('interactive:false')}), son item her zaman Log Out (${tk('log-out')} ikonu + versiyon + ${tk('.bt-kbd')} "Shift + K" kısayolu), aradakiler aksiyon listesi — Figma'dan birebir 4 aksiyon (fazlası/eksiği yok): Profile ${tk('circle-user-round')} · Developer Mode ${tk('user-shield')} + sağda örnek bir ${tk('.bt-switch__track')} (kapalı) · Settings ${tk('setting-2')} · Language ${tk('globe')} (2026-09-07, devam 23 — kullanıcı isteğiyle Figma node ${tk('1212:132236')} yeniden incelendi, ikonlar/etiketler birebir eşleşecek şekilde düzeltildi). Varsayılan <em>Group=3 / Items=6</em> ile bölünüş [1, 4, 1] — kimlik / 4 aksiyon / Log Out; ${tk('Group')}'u 1–2'ye düşürmek veya ${tk('Items')}'i değiştirmek bölünüşü normal şekilde etkiler (diğer tüm varyantlarda olduğu gibi). Her item, aynı <strong>Item N</strong> panelinden (Left/Right Control, Description, State) <em>gerçek görsel sırasıyla</em> override edilebilir — ${tk('Item 1')} her zaman kimlik, son ${tk('Item N')} her zaman Log Out'tur. Liste genişliği diğer tüm variant'larla aynı universal mekanizmayı kullanır — ad/e-posta/versiyon satırları için ayrı bir taşıyıcı genişlik class'ı YOK; taban yalnızca o item'ın aktif kontrol slotlarına (Avatar/Icon/Kbd — hepsi 32px olarak sayılır) göre belirlenir; e-posta/versiyon metinleri tabanın üzerinde ${tk('max-width:320px')} tavanına kadar serbestçe büyüyebilir, onu aşarsa ${tk('.bt-ovf-menu__label')} gerçekten daralıp ellipsis gösterir.</p>
       ${registerPlayground({
-        id: 'pgd-ovf-shortcuts-sec',
-        variants: [{ key: 'default', label: 'Shortcuts' }],
-        props: ovfSecProps({ right: false, variant: 'shortcuts' }),
-        preview: (v, p) => `<div style="display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;min-height:280px;">${ovfMenuHtml({ ...p, variant: 'shortcuts' })}</div>`,
-        code:    (v, p) => ovfMenuHtml({ ...p, variant: 'shortcuts' }),
-        css:     (v, p) => ovfMenuCss({ ...p, variant: 'shortcuts' }),
+        id: 'pgd-ovf-avatar-sec',
+        variants: [{ key: 'default', label: 'Avatar' }],
+        props: ovfSecProps({ left: false, right: false, groupsDefault: '3', variant: 'avatar' }),
+        preview: (v, p) => `<div style="display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;min-height:320px;">${ovfMenuHtml({ ...p, variant: 'avatar' })}</div>`,
+        code:    (v, p) => ovfMenuHtml({ ...p, variant: 'avatar' }),
+        css:     (v, p) => ovfMenuCss({ ...p, variant: 'avatar' }),
       })}
 
       <h3>States</h3>
-      <p class="page-desc">Shortcuts item — sağ slotta ${tk('.bt-kbd')} kısayol — için beş state. Kbd rengi Disabled state'te item text rengiyle birlikte solar (${tk('--bt-text-primary-muted')}). Playground'da <em>State</em> ilk item'a uygulanır.</p>
-      ${stateMatrix2(st => stateKbdItem(st, 'default'), st => stateKbdItem(st, 'danger'))}
+      <p class="page-desc">Aksiyon item'ları genel <strong>States</strong> paletiyle aynı beş durumu taşır (sol ikon rengi item text'iyle senkron; Disabled'da ${tk('--bt-icon-primary-muted')}). Kimlik başlığı ${tk('interactive:false')}'tır — hover/active almaz. Playground'da paylaşılan <em>State</em> ilk item'a (kimliğe) uygulanır; belirli bir aksiyonu test etmek için o item'ın kendi ${tk('Item N · State')} override'ını kullan.</p>
+      ${stateMatrix2(
+        st => `<div style="min-width:200px;">${ovfItemHtml({ label: 'Settings', state: st, left: 'icon', leftOpt: { icon: _ovfIconSetting2 } })}</div>`,
+        st => `<div style="min-width:220px;">${ovfItemHtml({ label: 'Log Out', desc: 'v.1.5.69 Mobydick', state: st, left: 'icon', leftOpt: { icon: _ovfIconLogOut }, right: 'kbd', rightOpt: { shortcut: 'Shift + K' } })}</div>`,
+        'Aksiyon item', 'Log Out (2 satır)')}
 
       <h3>Anatomy</h3>
-      <p class="page-desc">Shortcuts item Basic'e ek olarak sağ ${tk('.bt-ovf-menu__ctrl--hug')} slot'u barındırır; içine ${tk('.bt-kbd')} (tek tuş) veya ${tk('.bt-kbd-combo')} + ${tk('.bt-kbd-combo__plus')} (birden fazla tuş) girer. Diğer kontrol tipleri 32×32 sabittir; Kbd slotu Figma'da ${tk('Type=Kdb')} → ${tk('layoutSizingHorizontal:HUG')} olduğu için ${tk('width:auto; min-width:32px; overflow:visible')} taşır — kbd hiç klipslenmez, tam görünür; yerine ${tk('.bt-ovf-menu__label')} daralır. Kbd bileşeni gerçek DS component reuse'dur.</p>
+      <p class="page-desc">${tk('ovfMenuHtml')} ${tk("variant==='avatar'")} iken ${tk('mkItem(i)')} üç pozisyonu ayırt eder: ${tk('i===0')} → kimlik, ${tk('i===nItems-1')} → Log Out, arası → aksiyon. Her pozisyonun bir <em>varsayılan</em> Left/Right Control + Description'ı vardır ama ${tk('Item N')} override'ı (${tk('ov(i+1)')}) her zaman önceliklidir — yani kullanıcı "Item 1"in solunu Icon'a çevirirse kimlik avatarını kaybeder, bu beklenen bir davranıştır (genel motor, özel istisna yok). ${tk('Group')} prop'u avatar'da yalnız <em>bölüm boyutu kuralı</em> farklıdır: ${tk('Group≥3')} iken ilk/son grup 1 item alır (kimlik/Log Out), ortadaki grup(lar) aksiyonları alır; ${tk('Group≤2')} iken diğer varyantlardaki gibi yakın-eşit bölünür. Section ayrımı yine ${tk('.bt-ovf-menu__section + .bt-ovf-menu__section')} → ${tk('border-top')} (Figma "Seperator").</p>
+      <table class="token-table" style="margin-top:12px">
+        <thead><tr><th>Pozisyon</th><th>Varsayılan</th><th>Not</th></tr></thead>
+        <tbody>
+          <tr><td>İlk item (${tk('i===0')})</td><td>Left=Avatar ("EG") · Desc=On ("mail@example.com")</td><td>2 satır · ${tk('interactive:false')} · ${tk('Item 1')} ile override edilebilir</td></tr>
+          <tr><td>Aradaki item'lar</td><td>Left=Icon (Profile/Developer Mode/Settings/Language) · 2. aksiyon Right=Switch</td><td>sol ${tk('.bt-icon')} 24×24 · tıklama ${tk('btOvfMenuClose')}</td></tr>
+          <tr><td>Son item (${tk('i===nItems-1')})</td><td>Left=Icon (log-out) · Right=Kbd ("Shift + K") · Desc=On (versiyon)</td><td>2 satır · son ${tk('Item N')} ile override edilebilir</td></tr>
+          <tr><td>Section böl(ün)me</td><td>${tk('Group')} (varsayılan 3) → [1, orta, 1]</td><td>${tk('Group≤2')}'de yakın-eşit bölünüşe döner</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="Destructive">Destructive</h2>
+      <p class="page-desc">Destructive varyant, <strong>tüm menüyü kırmızıya boyamaz</strong> — bir aksiyon menüsünün nasıl <em>yıkıcı bir aksiyon barındırdığını</em> gösterir: normal item'lar Default kalır, yalnızca gerçekten geri alınamaz olan (Delete File) ${tk('.bt-ovf-menu__item--danger')} alır ve <strong>ayrı bir son section</strong>'a konur; üstteki normal section'dan ${tk('border-top')} (Figma "Line") ayırır. Danger item: metin/ikon ${tk('--bt-text-error-default')} (#b31d38), hover ${tk('--bt-error-subtle')} (#fde6e6), active/selected ${tk('--bt-error-muted')} (#fbd0d2). Playground'da <em>Items</em> normal item sayısını verir; danger section her zaman tek sabit item (Delete File) taşır ve <em>Left Control = Icon</em> seçilince bu item ${tk('trash-2')} ikonu alır. Figma "Overflow Menu Desctuctive" frame'i bu deseni birebir kullanır (normal aksiyonlar + Line + Delete).</p>
+      ${registerPlayground({
+        id: 'pgd-ovf-destructive-sec',
+        variants: [{ key: 'default', label: 'Destructive' }],
+        props: ovfSecProps({ destructiveLast: false, leftDefault: 'icon', variant: 'destructive' }),
+        preview: (v, p) => `<div style="display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;min-height:280px;">${ovfMenuHtml({ ...p, variant: 'destructive' })}</div>`,
+        code:    (v, p) => ovfMenuHtml({ ...p, variant: 'destructive' }),
+        css:     (v, p) => ovfMenuCss({ ...p, variant: 'destructive', destructiveLast: 'on' }),
+      })}
+
+      <h3>States</h3>
+      <p class="page-desc">Yalnızca danger item'ların state paleti genel <strong>States</strong> bölümündeki Default paletinden ayrışır; aşağıdaki "Danger type" kolonu bu paleti (sol slotta trash ikonu taşıyan Delete File üzerinden) gösterir — normal item'lar Default paletini kullanır. Playground'da <em>State</em> ilk (normal) item'a uygulanır; danger section sabittir.</p>
+      ${stateMatrix1(st => stateDngItem(st), 'Danger type')}
+
+      <h3>Anatomy</h3>
+      <p class="page-desc">${tk('.bt-ovf-menu__item--danger')} class'ı yalnızca gerçekten yıkıcı item'a (Delete File) eklenir — Basic item'ın renk paletini override eder, yapısal fark yoktur. Bu item ${tk('ovfMenuHtml')}'de <strong>ayrı bir son ${tk('.bt-ovf-menu__section')}</strong>'a konur; üstteki normal section'dan ${tk('.bt-ovf-menu__section + .bt-ovf-menu__section')} → ${tk('border-top')} (Figma "Line") ayırır. <em>Left Control = Icon</em> iken sol slota ${tk('trash-2')} (${tk('_ovfIconTrash')}) ikonu konur.</p>
       <table class="token-table" style="margin-top:12px">
         <thead><tr><th>Element</th><th>Class</th><th>Not</th></tr></thead>
         <tbody>
-          <tr><td>Item</td><td>${tk('.bt-ovf-menu__item')}</td><td>Basic'le aynı</td></tr>
-          <tr><td>Item row</td><td>${tk('.bt-ovf-menu__item-row')}</td><td>flex — Label + Right ctrl</td></tr>
-          <tr><td>Right ctrl (slot)</td><td>${tk('.bt-ovf-menu__ctrl--hug')}</td><td>${tk('width:auto')} · ${tk('min-width:32px')} · ${tk('overflow:visible')} — 32px'e sığmayan kbd tam görünür</td></tr>
-          <tr><td>Right ctrl (tek tuş)</td><td>${tk('.bt-ovf-menu__ctrl--hug')} → ${tk('kbd.bt-kbd')}</td><td>Mono 12px · ${tk('--bt-base-subtle')} arka plan · ${tk('--bt-text-primary-emphasis')}</td></tr>
-          <tr><td>Right ctrl (kombo)</td><td>${tk('.bt-ovf-menu__ctrl--hug')} → ${tk('.bt-kbd-combo')}</td><td>inline-flex; her tuş ayrı ${tk('.bt-kbd')}, aralarında ${tk('.bt-kbd-combo__plus')} "+"</td></tr>
+          <tr><td>Danger section</td><td>${tk('.bt-ovf-menu__section')} (son)</td><td>yalnız Delete File danger item'ı; ${tk('border-top')} ile normal section'dan ayrı</td></tr>
+          <tr><td>Danger item</td><td>${tk('.bt-ovf-menu__item--danger')}</td><td>text/ikon ${tk('--bt-text-error-default')} (#b31d38)</td></tr>
+          <tr><td>Danger hover</td><td>${tk('.bt-ovf-menu__item--danger:hover')}</td><td>${tk('background: --bt-error-subtle')} (#fde6e6)</td></tr>
+          <tr><td>Danger active/selected</td><td>${tk('.bt-ovf-menu__item--danger.--active')}</td><td>${tk('background: --bt-error-muted')} (#fbd0d2)</td></tr>
+          <tr><td>Danger ctrl</td><td>${tk('.bt-ovf-menu__item--danger .bt-ovf-menu__ctrl')}</td><td>${tk('color: --bt-icon-error-default')} (#b31d38)</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="Sections">Sections</h2>
+      <p class="page-desc">Sections varyant, aksiyon listesini anlamsal gruplara ayırmak için birden fazla ${tk('.bt-ovf-menu__section')} kullanır — Figma "Overflow Menu Sections" frame'i <strong>üç</strong> section gösterir: <em>File</em> (2 item) · <em>Actions</em> (5 item) · ayrı bir <em>Delete</em> section'ı (group label'sız). Her section başına opsiyonel ${tk('.bt-ovf-menu__group-label')} konur; section'lar arasına ${tk('border-top')} (Figma explicit "Seperator" component'i — 1px ${tk('--bt-border-primary-default')} #d4d4d4, tam genişlik; docs'ta CSS ile üretilir) girer. Playground'da <em>Group</em> (varsayılan 2) body item'larını kaç section'a böleceğini, <em>Group Label = On</em> section başlıklarını (File / Actions / More), <em>Divider</em> section'lar arası çizgiyi, <em>Destructive Item = On</em> ise Delete'i <strong>ayrı bir son section</strong>'a koymayı kontrol eder. <em>Item</em> grubuyla her item tek tek override edilebilir.</p>
+      ${registerPlayground({
+        id: 'pgd-ovf-sections-sec',
+        variants: [{ key: 'default', label: 'Sections' }],
+        props: ovfSecProps({ groupLabelDefault: 'on', groupsDefault: '2', variant: 'sections' }),
+        preview: (v, p) => `<div style="display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;min-height:280px;">${ovfMenuHtml({ ...p, variant: 'sections' })}</div>`,
+        code:    (v, p) => ovfMenuHtml({ ...p, variant: 'sections' }),
+        css:     (v, p) => ovfMenuCss({ ...p, variant: 'sections' }),
+      })}
+
+      <h3>States</h3>
+      <p class="page-desc">Section içindeki item'lar Basic item'larla aynı state davranışını paylaşır; state yalnızca hedef item'a uygulanır, section sınırı veya group label state'ten etkilenmez. Playground'da <em>State</em> ilk item'a uygulanır.</p>
+      ${stateMatrix2(st => stateItem(st, 'default'), st => stateItem(st, 'danger'))}
+
+      <h3>Anatomy</h3>
+      <p class="page-desc">Sections varyantı birden çok ${tk('.bt-ovf-menu__section')} barındırır — her section 4px padding + flex-column; ardışık section'lar arasına ${tk('.bt-ovf-menu__section + .bt-ovf-menu__section')} → ${tk('border-top')} girer (Figma bunu ayrı bir "Seperator" component'iyle modelliyor — ${tk('Line')}, 1px, ${tk('--bt-border-primary-default')} #d4d4d4, tam genişlik; docs CSS ile aynı sonucu üretir). İlk section'lara opsiyonel ${tk('.bt-ovf-menu__group-label')} (Geist Medium 12/16, ${tk('--bt-text-primary-emphasis')}, padding 4px/8px dikey/yatay) konur; Delete section'ında group label olmaz. Item'lar herhangi bir varyantın yapısını (Basic/Icons/Shortcuts…) alabilir; Delete item'ı ${tk('.bt-ovf-menu__item--danger')} + sol slotta ${tk('trash-2')}.</p>
+      <table class="token-table" style="margin-top:12px">
+        <thead><tr><th>Element</th><th>Class</th><th>Not</th></tr></thead>
+        <tbody>
+          <tr><td>Section</td><td>${tk('.bt-ovf-menu__section')}</td><td>flex-column · padding ${tk('--bt-space-xs')} (4px) · role=group · Figma frame'inde 3 adet (File / Actions / Delete)</td></tr>
+          <tr><td>Section divider</td><td>${tk('.bt-ovf-menu__section + .bt-ovf-menu__section')}</td><td>${tk('border-top: 1px solid --bt-border-primary-default')} (#d4d4d4) — Figma "Seperator" component'i · playground <em>Divider=Off</em> ile ${tk('.bt-ovf-menu__list--no-divider')} kaldırır</td></tr>
+          <tr><td>Group Label</td><td>${tk('.bt-ovf-menu__group-label')}</td><td>Geist Medium 12/16 · ${tk('--bt-text-primary-emphasis')} · padding 4px/8px · opsiyonel · Delete section'ında yok</td></tr>
+          <tr><td>Delete item</td><td>${tk('.bt-ovf-menu__item--danger')}</td><td>ayrı son section · sol slotta ${tk('trash-2')} (Left Control = Icon iken)</td></tr>
+          <tr><td>Items</td><td>${tk('.bt-ovf-menu__item')}</td><td>herhangi bir varyantın item yapısı (Basic/Icons/Shortcuts…)</td></tr>
         </tbody>
       </table>
 
@@ -15744,93 +16076,8 @@ PAGES_WEB['components/overflow-menu'] = {
       ${togSection('Radios Icons',  'pgd-ovf-radios-icons-sec',   'radiosIcons',   'radio',  true,  'Figma "Overflow Menu Radios Icons" ' + tk('1180:132375'))}
       ${togSection('Switches',      'pgd-ovf-switches-sec',       'switches',      'switch', false, 'Figma "Overflow Menu Switches"')}
       ${togSection('Switches Icons','pgd-ovf-switches-icons-sec', 'switchesIcons', 'switch', true,  'Figma "Overflow Menu Switches Icons"')}
-
-      <h2 id="Avatar">Avatar</h2>
-      <p class="page-desc">Avatar varyant, bir <strong>hesap / kullanıcı menüsü</strong>dür (Figma ${tk('1182:132948')}) — bir tetikleyici avatarın altında açılır. <strong>Ayrı bir builder değil</strong>: tıpkı diğer varyantlar gibi aynı ${tk('Group')} / ${tk('Items')} / ${tk('Item N')} motorundan geçer, yalnız <em>pozisyona göre varsayılan</em> değişir — 1. item her zaman kimlik (${tk('.bt-avatar--xs')} 28×28 "EG" + ad + e-posta, ${tk('interactive:false')}), son item her zaman Log Out (${tk('log-out')} ikonu + versiyon + ${tk('.bt-kbd')} kısayolu), aradakiler aksiyon listesi (Profile ${tk('user')} · Developer Mode ${tk('code')} + sağda örnek bir ${tk('.bt-switch__track')} · Settings ${tk('settings')} · User List ${tk('users')} · Language ${tk('languages')}). Varsayılan <em>Group=3 / Items=6</em> ile bölünüş [1, 4, 1] — kimlik / 4 aksiyon / Log Out; ${tk('Group')}'u 1–2'ye düşürmek veya ${tk('Items')}'i değiştirmek bölünüşü normal şekilde etkiler (diğer tüm varyantlarda olduğu gibi). Her item, aynı <strong>Item N</strong> panelinden (Left/Right Control, Description, State) <em>gerçek görsel sırasıyla</em> override edilebilir — ${tk('Item 1')} her zaman kimlik, son ${tk('Item N')} her zaman Log Out'tur. Liste ${tk('.bt-ovf-menu__list--wide')} alır (${tk('min-width:260px')}, diğerlerinde 180px) — ad/e-posta/versiyon satırları için. İkonlar Figma'daki ${tk('Icon/placeholder')} yerine anlamsal Lucide seti olarak implement edildi.</p>
-      ${registerPlayground({
-        id: 'pgd-ovf-avatar-sec',
-        variants: [{ key: 'default', label: 'Avatar' }],
-        props: ovfSecProps({ left: false, right: false, groupsDefault: '3', variant: 'avatar' }),
-        preview: (v, p) => `<div style="display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;min-height:320px;">${ovfMenuHtml({ ...p, variant: 'avatar' })}</div>`,
-        code:    (v, p) => ovfMenuHtml({ ...p, variant: 'avatar' }),
-        css:     (v, p) => ovfMenuCss({ ...p, variant: 'avatar' }),
-      })}
-
-      <h3>States</h3>
-      <p class="page-desc">Aksiyon item'ları genel <strong>States</strong> paletiyle aynı beş durumu taşır (sol ikon rengi item text'iyle senkron; Disabled'da ${tk('--bt-icon-primary-muted')}). Kimlik başlığı ${tk('interactive:false')}'tır — hover/active almaz. Playground'da paylaşılan <em>State</em> ilk item'a (kimliğe) uygulanır; belirli bir aksiyonu test etmek için o item'ın kendi ${tk('Item N · State')} override'ını kullan.</p>
-      ${stateMatrix2(
-        st => `<div style="min-width:200px;">${ovfItemHtml({ label: 'Settings', state: st, left: 'icon', leftOpt: { icon: _ovfIconSettings } })}</div>`,
-        st => `<div style="min-width:220px;">${ovfItemHtml({ label: 'Log Out', desc: 'v.1.5.69 Mobydick', state: st, left: 'icon', leftOpt: { icon: _ovfIconLogOut }, right: 'kbd', rightOpt: { shortcut: 'Ctrl + Q' } })}</div>`,
-        'Aksiyon item', 'Log Out (2 satır)')}
-
-      <h3>Anatomy</h3>
-      <p class="page-desc">${tk('ovfMenuHtml')} ${tk("variant==='avatar'")} iken ${tk('mkItem(i)')} üç pozisyonu ayırt eder: ${tk('i===0')} → kimlik, ${tk('i===nItems-1')} → Log Out, arası → aksiyon. Her pozisyonun bir <em>varsayılan</em> Left/Right Control + Description'ı vardır ama ${tk('Item N')} override'ı (${tk('ov(i+1)')}) her zaman önceliklidir — yani kullanıcı "Item 1"in solunu Icon'a çevirirse kimlik avatarını kaybeder, bu beklenen bir davranıştır (genel motor, özel istisna yok). ${tk('Group')} prop'u avatar'da yalnız <em>bölüm boyutu kuralı</em> farklıdır: ${tk('Group≥3')} iken ilk/son grup 1 item alır (kimlik/Log Out), ortadaki grup(lar) aksiyonları alır; ${tk('Group≤2')} iken diğer varyantlardaki gibi yakın-eşit bölünür. Section ayrımı yine ${tk('.bt-ovf-menu__section + .bt-ovf-menu__section')} → ${tk('border-top')} (Figma "Seperator").</p>
-      <table class="token-table" style="margin-top:12px">
-        <thead><tr><th>Pozisyon</th><th>Varsayılan</th><th>Not</th></tr></thead>
-        <tbody>
-          <tr><td>İlk item (${tk('i===0')})</td><td>Left=Avatar ("EG") · Desc=On ("mail@example.com")</td><td>2 satır · ${tk('interactive:false')} · ${tk('Item 1')} ile override edilebilir</td></tr>
-          <tr><td>Aradaki item'lar</td><td>Left=Icon (Profile/Developer Mode/Settings/User List/Language) · 2. aksiyon Right=Switch</td><td>sol ${tk('.bt-icon')} 24×24 · tıklama ${tk('btOvfMenuClose')}</td></tr>
-          <tr><td>Son item (${tk('i===nItems-1')})</td><td>Left=Icon (log-out) · Right=Kbd ("Ctrl + Q") · Desc=On (versiyon)</td><td>2 satır · son ${tk('Item N')} ile override edilebilir</td></tr>
-          <tr><td>Section böl(ün)me</td><td>${tk('Group')} (varsayılan 3) → [1, orta, 1]</td><td>${tk('Group≤2')}'de yakın-eşit bölünüşe döner</td></tr>
-          <tr><td>List genişliği</td><td>${tk('.bt-ovf-menu__list--wide')}</td><td>${tk('min-width:260px')} (diğer varyantlarda 180px)</td></tr>
-        </tbody>
-      </table>
-
-      <h2 id="Sections">Sections</h2>
-      <p class="page-desc">Sections varyant, aksiyon listesini anlamsal gruplara ayırmak için birden fazla ${tk('.bt-ovf-menu__section')} kullanır — Figma "Overflow Menu Sections" frame'i <strong>üç</strong> section gösterir: <em>File</em> (2 item) · <em>Actions</em> (5 item) · ayrı bir <em>Delete</em> section'ı (group label'sız). Her section başına opsiyonel ${tk('.bt-ovf-menu__group-label')} konur; section'lar arasına ${tk('border-top')} (Figma explicit "Seperator" component'i — 1px ${tk('--bt-border-primary-default')} #d4d4d4, tam genişlik; docs'ta CSS ile üretilir) girer. Playground'da <em>Group</em> (varsayılan 2) body item'larını kaç section'a böleceğini, <em>Group Label = On</em> section başlıklarını (File / Actions / More), <em>Divider</em> section'lar arası çizgiyi, <em>Destructive Item = On</em> ise Delete'i <strong>ayrı bir son section</strong>'a koymayı kontrol eder. <em>Item</em> grubuyla her item tek tek override edilebilir.</p>
-      ${registerPlayground({
-        id: 'pgd-ovf-sections-sec',
-        variants: [{ key: 'default', label: 'Sections' }],
-        props: ovfSecProps({ groupLabelDefault: 'on', groupsDefault: '2', variant: 'sections' }),
-        preview: (v, p) => `<div style="display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;min-height:280px;">${ovfMenuHtml({ ...p, variant: 'sections' })}</div>`,
-        code:    (v, p) => ovfMenuHtml({ ...p, variant: 'sections' }),
-        css:     (v, p) => ovfMenuCss({ ...p, variant: 'sections' }),
-      })}
-
-      <h3>States</h3>
-      <p class="page-desc">Section içindeki item'lar Basic item'larla aynı state davranışını paylaşır; state yalnızca hedef item'a uygulanır, section sınırı veya group label state'ten etkilenmez. Playground'da <em>State</em> ilk item'a uygulanır.</p>
-      ${stateMatrix2(st => stateItem(st, 'default'), st => stateItem(st, 'danger'))}
-
-      <h3>Anatomy</h3>
-      <p class="page-desc">Sections varyantı birden çok ${tk('.bt-ovf-menu__section')} barındırır — her section 4px padding + flex-column; ardışık section'lar arasına ${tk('.bt-ovf-menu__section + .bt-ovf-menu__section')} → ${tk('border-top')} girer (Figma bunu ayrı bir "Seperator" component'iyle modelliyor — ${tk('Line')}, 1px, ${tk('--bt-border-primary-default')} #d4d4d4, tam genişlik; docs CSS ile aynı sonucu üretir). İlk section'lara opsiyonel ${tk('.bt-ovf-menu__group-label')} (Geist Medium 12/16, ${tk('--bt-text-primary-emphasis')}, padding 4px/8px dikey/yatay) konur; Delete section'ında group label olmaz. Item'lar herhangi bir varyantın yapısını (Basic/Icons/Shortcuts…) alabilir; Delete item'ı ${tk('.bt-ovf-menu__item--danger')} + sol slotta ${tk('trash-2')}.</p>
-      <table class="token-table" style="margin-top:12px">
-        <thead><tr><th>Element</th><th>Class</th><th>Not</th></tr></thead>
-        <tbody>
-          <tr><td>Section</td><td>${tk('.bt-ovf-menu__section')}</td><td>flex-column · padding ${tk('--bt-space-xs')} (4px) · role=group · Figma frame'inde 3 adet (File / Actions / Delete)</td></tr>
-          <tr><td>Section divider</td><td>${tk('.bt-ovf-menu__section + .bt-ovf-menu__section')}</td><td>${tk('border-top: 1px solid --bt-border-primary-default')} (#d4d4d4) — Figma "Seperator" component'i · playground <em>Divider=Off</em> ile ${tk('.bt-ovf-menu__list--no-divider')} kaldırır</td></tr>
-          <tr><td>Group Label</td><td>${tk('.bt-ovf-menu__group-label')}</td><td>Geist Medium 12/16 · ${tk('--bt-text-primary-emphasis')} · padding 4px/8px · opsiyonel · Delete section'ında yok</td></tr>
-          <tr><td>Delete item</td><td>${tk('.bt-ovf-menu__item--danger')}</td><td>ayrı son section · sol slotta ${tk('trash-2')} (Left Control = Icon iken)</td></tr>
-          <tr><td>Items</td><td>${tk('.bt-ovf-menu__item')}</td><td>herhangi bir varyantın item yapısı (Basic/Icons/Shortcuts…)</td></tr>
-        </tbody>
-      </table>
-
-      <h2 id="Destructive">Destructive</h2>
-      <p class="page-desc">Destructive varyant, <strong>tüm menüyü kırmızıya boyamaz</strong> — bir aksiyon menüsünün nasıl <em>yıkıcı bir aksiyon barındırdığını</em> gösterir: normal item'lar Default kalır, yalnızca gerçekten geri alınamaz olan (Delete File) ${tk('.bt-ovf-menu__item--danger')} alır ve <strong>ayrı bir son section</strong>'a konur; üstteki normal section'dan ${tk('border-top')} (Figma "Line") ayırır. Danger item: metin/ikon ${tk('--bt-text-error-default')} (#b31d38), hover ${tk('--bt-error-subtle')} (#fde6e6), active/selected ${tk('--bt-error-muted')} (#fbd0d2). Playground'da <em>Items</em> normal item sayısını verir; danger section her zaman tek sabit item (Delete File) taşır ve <em>Left Control = Icon</em> seçilince bu item ${tk('trash-2')} ikonu alır. Figma "Overflow Menu Desctuctive" frame'i bu deseni birebir kullanır (normal aksiyonlar + Line + Delete).</p>
-      ${registerPlayground({
-        id: 'pgd-ovf-destructive-sec',
-        variants: [{ key: 'default', label: 'Destructive' }],
-        props: ovfSecProps({ destructiveLast: false, leftDefault: 'icon', variant: 'destructive' }),
-        preview: (v, p) => `<div style="display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;min-height:280px;">${ovfMenuHtml({ ...p, variant: 'destructive' })}</div>`,
-        code:    (v, p) => ovfMenuHtml({ ...p, variant: 'destructive' }),
-        css:     (v, p) => ovfMenuCss({ ...p, variant: 'destructive', destructiveLast: 'on' }),
-      })}
-
-      <h3>States</h3>
-      <p class="page-desc">Yalnızca danger item'ların state paleti genel <strong>States</strong> bölümündeki Default paletinden ayrışır; aşağıdaki "Danger type" kolonu bu paleti (sol slotta trash ikonu taşıyan Delete File üzerinden) gösterir — normal item'lar Default paletini kullanır. Playground'da <em>State</em> ilk (normal) item'a uygulanır; danger section sabittir.</p>
-      ${stateMatrix1(st => stateDngItem(st), 'Danger type')}
-
-      <h3>Anatomy</h3>
-      <p class="page-desc">${tk('.bt-ovf-menu__item--danger')} class'ı yalnızca gerçekten yıkıcı item'a (Delete File) eklenir — Basic item'ın renk paletini override eder, yapısal fark yoktur. Bu item ${tk('ovfMenuHtml')}'de <strong>ayrı bir son ${tk('.bt-ovf-menu__section')}</strong>'a konur; üstteki normal section'dan ${tk('.bt-ovf-menu__section + .bt-ovf-menu__section')} → ${tk('border-top')} (Figma "Line") ayırır. <em>Left Control = Icon</em> iken sol slota ${tk('trash-2')} (${tk('_ovfIconTrash')}) ikonu konur.</p>
-      <table class="token-table" style="margin-top:12px">
-        <thead><tr><th>Element</th><th>Class</th><th>Not</th></tr></thead>
-        <tbody>
-          <tr><td>Danger section</td><td>${tk('.bt-ovf-menu__section')} (son)</td><td>yalnız Delete File danger item'ı; ${tk('border-top')} ile normal section'dan ayrı</td></tr>
-          <tr><td>Danger item</td><td>${tk('.bt-ovf-menu__item--danger')}</td><td>text/ikon ${tk('--bt-text-error-default')} (#b31d38)</td></tr>
-          <tr><td>Danger hover</td><td>${tk('.bt-ovf-menu__item--danger:hover')}</td><td>${tk('background: --bt-error-subtle')} (#fde6e6)</td></tr>
-          <tr><td>Danger active/selected</td><td>${tk('.bt-ovf-menu__item--danger.--active')}</td><td>${tk('background: --bt-error-muted')} (#fbd0d2)</td></tr>
-          <tr><td>Danger ctrl</td><td>${tk('.bt-ovf-menu__item--danger .bt-ovf-menu__ctrl')}</td><td>${tk('color: --bt-icon-error-default')} (#b31d38)</td></tr>
-        </tbody>
-      </table>
+      ${togSection('Palettes',       'pgd-ovf-palettes-sec',       'palettes',       'palette', false, "Figma'da ayrı bir sayfa yok — playground'un kendi Background renk seçicisiyle (bkz. Kod tab'ı " + tk('PGD_BG_OPTIONS') + ') aynı 8 ' + tk('--bt-surface-*') + " token örneklenir (kullanıcı isteği, 2026-09-07)")}
+      ${togSection('Palettes Icons', 'pgd-ovf-palettes-icons-sec', 'palettesIcons',  'palette', true,  "Palettes ile aynı renk kaynağı — sol slota sabit " + tk('blend') + ' ikonu eklenir')}
 
     `};
   },

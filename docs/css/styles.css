@@ -6848,7 +6848,32 @@ pre.code-block.line-numbers {
   display: none;
   position: fixed;
   z-index: 200;
-  min-width: 180px;
+  /* Width sizing modeli (2026-09-07, devam 7/8/15 — CANLI TARAYICIDA DOĞRULANDI,
+     Playwright + sistem Chrome ile; devam 8'de taban 240→220px, devam 15'te
+     220→160px kullanıcı isteğiyle düşürüldü, formül/mekanizma AYNI). TABAN: width
+     tamamen JS'te DETERMİNİSTİK hesaplanıyor (bkz. ovfMenuHtml içindeki
+     OVF_LIST_BASE_WIDTH/OVF_LIST_CTRL_WIDTH/maxCtrlWidth, docs/js/pages-web.js)
+     ve inline `style="min-width:...px"` olarak basılıyor — Basic (kontrolsüz)
+     = OVF_LIST_BASE_WIDTH (160px), item'lardaki EN GENİŞ kontrol kombinasyonu
+     (Left/Right, ne tip olursa olsun) tabana +32px/slot ekler (Icons=192,
+     Left+Right=224, vb.). Devam 7'de 240px tabanla canlı ölçülmüştü (Basic=240,
+     +Left=272, +Left+Right=304, Avatar=304, hepsi kesirliksiz/beklenen) — formül
+     değişmediği için 160px tabanla da aynı doğrulukla çalışır (Basic=160,
+     +Left=192, +Left+Right=224, Avatar=224).
+     TAVAN: `position:fixed` + `width:auto` (örtük shrink-to-fit) yüzünden GERÇEKTEN
+     uzun bir label/description metni tabanın ÜZERİNE çıkabiliyordu (canlı test:
+     304px'lik bir satıra ~145 karakterlik metin eklenince liste 856px'e kadar
+     büyüdü, ellipsis HİÇ tetiklenmedi) — bu, 2026-09-04'te kabul edilen "belli bir
+     noktadan sonra ellipsis olmalı" gereksinimini ihlal ediyordu. max-width:320px
+     eklendi — ÖNEMLİ: bu, `devam 4`'teki BAŞARISIZ modelden farklı, çünkü orada
+     max-width `.bt-ovf-menu__label`'a flex-grow:1 İLE BİRLİKTE konmuştu (bu
+     kombinasyon kısa metni bile zorla 320'ye şişiriyordu) — burada max-width
+     yalnızca LİSTE'nin kendi shrink-to-fit hesabına bir TAVAN, Label'a hiç
+     dokunulmuyor. Canlı doğrulandı: kısa metin cap varken bile tabanda kalıyor
+     (zorla şişmiyor), uzun metin 320'de gerçekten kırpılıyor (ekran görüntüsüyle
+     teyit edildi, bkz. HISTORY.md devam 7/8). */
+  min-width: 160px;
+  max-width: 320px;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -6858,6 +6883,28 @@ pre.code-block.line-numbers {
   overflow: hidden;
   box-shadow: var(--bt-shadow-sm, 0 1px 2px rgba(16,24,40,0.06), 0 1px 3px rgba(16,24,40,0.10));
   box-sizing: border-box;
+  /* Açılış/kapanış animasyonu (2026-09-07, devam 16) — fade + hafif scale/translateY,
+     transform-origin liste tetikleyicinin en yakın köşesi (top left, hem ana listede
+     tetikleyici düğmenin altına hem submenu'de parent item'ın sağına doğru açılırken
+     doğal durur). JS (pages-web.js `_btOvfAnimateOpen`/`_btOvfAnimateClose`) `display:
+     none`↔`block` toggling'ini KORUYOR — bu transition sadece görünürken (display:block)
+     devrede, `--visible` class'ı eklenip çıkarılarak tetiklenir; kapanışta GERÇEK
+     display:none, transition süresi kadar (OVF_ANIM_MS) gecikmeli uygulanır ki fade
+     görünsün. `--closing` sırasında pointer-events:none — yarı saydamken tıklanamaz. */
+  transition: opacity 140ms cubic-bezier(0.16,1,0.3,1), transform 140ms cubic-bezier(0.16,1,0.3,1);
+  transform-origin: top left;
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+}
+.bt-ovf-menu__list--visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.bt-ovf-menu__list--closing {
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bt-ovf-menu__list { transition: none; }
 }
 
 /* Section — Figma "Section"; birden çoksa aralarına Line (border-top) girer */
@@ -6873,10 +6920,6 @@ pre.code-block.line-numbers {
 .bt-ovf-menu__list--no-divider .bt-ovf-menu__section + .bt-ovf-menu__section {
   border-top: none;
 }
-/* Avatar varyantı — ad/e-posta/versiyon satırları diğer varyantlardan uzun,
-   180px taban dar kalıyordu; daha geniş bir taban + içerik yine gerekirse büyür. */
-.bt-ovf-menu__list--wide { min-width: 260px; }
-
 /* Group Label — Figma "Overflow Menu Item Group Label" (1112:132370)
    İç "Label" frame padding [4,8,4,8] → 4px dikey / 8px yatay */
 .bt-ovf-menu__group-label {
@@ -6900,7 +6943,10 @@ pre.code-block.line-numbers {
   cursor: pointer;
   user-select: none;
 }
-/* Base Overflow Menu Item — iç flex satırı (1090:133293) */
+/* Base Overflow Menu Item — iç flex satırı (1090:133293).
+   width:100% = FILL katmanı: satır her zaman .bt-ovf-menu__list'in (JS'te
+   deterministik hesaplanan) genişliğini doldurur — Section/Item de aynı
+   şekilde width:100% ile bu genişliği aşağı taşır. */
 .bt-ovf-menu__item-row {
   display: flex;
   align-items: center;
@@ -6926,9 +6972,22 @@ pre.code-block.line-numbers {
   min-width: 32px;
   overflow: visible;
 }
-/* Label — flex-1, dikey ortalı, tek/çift satır ellipsis (Figma "Label" FRAME) */
+/* Label — dikey ortalı, tek/çift satır ellipsis (Figma "Label" FRAME).
+   2026-09-07 (devam 8, canlı bug tespiti): flex-shrink:0 KALDIRILDI — devam 5'te
+   "Label asla sıkışmasın" diye eklenmişti, ama JS artık genişlik tabanını zaten
+   deterministik hesapladığı için (bkz. .bt-ovf-menu__list) bu satır GEREKSİZDİ —
+   üstelik zararlıydı: shrink:0, Liste'nin max-width:320px tavanını aştığında
+   Label'ın GERÇEKTEN daralıp ellipsis göstermesini ENGELLİYORDU (metin "…" ile
+   değil, .bt-ovf-menu__item'ın overflow:clip'i tarafından çıplak/karaktersiz
+   kesiliyordu — canlı ekran görüntüsüyle doğrulandı). flex-shrink:1 (varsayılan)
+   ile Label artık satırda GERÇEKTEN kalan alana (kontrol slotları çıkınca kalan)
+   daralabiliyor; canlı doğrulandı — hem "…" doğru görünüyor HEM de deterministik
+   taban (220/252/284) hiç bozulmuyor (control'lerin garantisi flex-shrink'ten
+   değil, JS'in min-width hesabından geliyordu zaten). */
 .bt-ovf-menu__label {
-  flex: 1;
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -6942,6 +7001,9 @@ pre.code-block.line-numbers {
   padding-left: var(--bt-space-xs, 4px);
   padding-right: var(--bt-space-xs, 4px);
 }
+/* ELLIPSIS katmanı: Liste'nin JS-taban'ı (kontrol slotlarına göre) ile
+   max-width:320px tavanı ARASINDA metin serbestçe büyütebilir (position:fixed
+   shrink-to-fit) — 320px'i aşan metin burada kırpılır (canlı doğrulandı). */
 .bt-ovf-menu__label-text {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -6977,7 +7039,7 @@ pre.code-block.line-numbers {
 .bt-ovf-menu__item--danger:active,
 .bt-ovf-menu__item--danger.bt-ovf-menu__item--active,
 .bt-ovf-menu__item--danger.bt-ovf-menu__item--selected  { background: var(--bt-error-muted, #fbd0d2); }
-.bt-ovf-menu__item--danger.bt-ovf-menu__item--focus     { background: var(--bt-error-subtle, #fde6e6); }  /* Figma: Destructive Focus zemin = error-subtle */
+.bt-ovf-menu__item--danger.bt-ovf-menu__item--focus     { background: var(--bt-error-subtle, #fde6e6); box-shadow: 0 0 0 3px rgba(232, 75, 91, 0.24); }  /* Figma: Destructive Focus zemin = error-subtle, ring = ayrı "Focus Ring/error" efekt stili (kırmızı tonlu, nötr Default ring'inden FARKLI — 2026-09-07 devam 24'te düzeltildi, önceden box-shadow hiç override edilmiyordu, genel nötr gri ring sızıyordu) */
 .bt-ovf-menu__item--danger.bt-ovf-menu__item--disabled  { color: var(--bt-text-error-muted, #fbd0d2); }
 .bt-ovf-menu__item--danger.bt-ovf-menu__item--disabled .bt-ovf-menu__ctrl { color: var(--bt-icon-error-muted, #fbd0d2); }
 
@@ -7000,6 +7062,13 @@ pre.code-block.line-numbers {
   border-radius: var(--bt-radius-sm, 4px);
   background: var(--bt-base-default, #ffffff);
 }
+/* Palettes varyantı — "seçili" göstergesi swatch'ın KENDİSİNDE değil (2026-09-07,
+   devam 19 — kullanıcı düzeltmesi: "Figma'da palette'in selected diye bir
+   tasarımı yok, o zaman menu item'da zaten var olan selected'ı kullan").
+   devam 18'de burada swatch'a özel bir box-shadow ring vardı — Figma karşılığı
+   olmayan icat edilmiş bir görsel olduğu için kaldırıldı; seçili item artık
+   component'te ZATEN var olan genel .bt-ovf-menu__item--selected state'ini
+   alır (--bt-base-muted, §21.3, Figma'dan doğrulanmış) — bkz. btOvfRadioPick. */
 
 /* ── eski API (geriye dönük — kaldırılmadı) ── */
 .bt-ovf-menu__item-icon {

@@ -362,7 +362,8 @@ window._sbxToggle = function() {
   if (el) el.classList.toggle('is-collapsed');
 };
 
-const sbxIconSearch = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>`;
+const sbxIconSearch = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.34-4.34"/></svg>`;
+const sbxIconFilter = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/></svg>`;
 const sbxIconPlaceholder = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8V5a2 2 0 0 1 2-2h3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/></svg>`;
 const sbxIconMenu = `<svg width="20" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`;
 
@@ -440,12 +441,12 @@ function sidebarMarkupA(variant) {
           </div>
           <div class="sbx-drawer${collapsedCls}" id="sbxDrawer">
             <div class="sbx-drawer-top">
-              <div class="bt-searchbox bt-searchbox--sm">
-                <div class="bt-searchbox__control">
-                  <span class="bt-searchbox__icon">${sbxIconSearch}</span>
+              <div class="bt-input bt-searchbox bt-input--sm">
+                <div class="bt-input__control">
+                  <span class="bt-icon">${sbxIconSearch}</span>
                 </div>
-                <div class="bt-searchbox__field">
-                  <input class="bt-searchbox__text" type="text" placeholder="Placeholder Text" oninput="sbxInput(this)" />
+                <div class="bt-input__field">
+                  <input class="bt-input__text" type="text" placeholder="Placeholder Text" oninput="sbxInput(this)" />
                 </div>
                 <div class="sbx-searchbox-kbd">Tab</div>
               </div>
@@ -489,12 +490,12 @@ function sidebarCodeSnippetA(variant) {
   </div>
   <div class="sbx-drawer${variant === 'collapsed' ? ' is-collapsed' : ''}">
     <div class="sbx-drawer-top">
-      <div class="bt-searchbox bt-searchbox--sm">
-        <div class="bt-searchbox__control">
-          <span class="bt-searchbox__icon"><!-- search icon --></span>
+      <div class="bt-input bt-searchbox bt-input--sm">
+        <div class="bt-input__control">
+          <span class="bt-icon"><!-- search icon --></span>
         </div>
-        <div class="bt-searchbox__field">
-          <input class="bt-searchbox__text" type="text" placeholder="Placeholder Text" />
+        <div class="bt-input__field">
+          <input class="bt-input__text" type="text" placeholder="Placeholder Text" />
         </div>
         <div class="sbx-searchbox-kbd">Tab</div>
       </div>
@@ -563,12 +564,12 @@ function standartSidebarMarkup(state) {
           </div>
           <div class="stb-body">
             <div class="stb-search-wrap">
-              <div class="bt-searchbox bt-searchbox--md">
-                <div class="bt-searchbox__control">
-                  <span class="bt-searchbox__icon">${sbxIconSearch}</span>
+              <div class="bt-input bt-searchbox bt-input--md">
+                <div class="bt-input__control">
+                  <span class="bt-icon">${sbxIconSearch}</span>
                 </div>
-                <div class="bt-searchbox__field">
-                  <input class="bt-searchbox__text" type="text" placeholder="Search" oninput="sbxInput(this)" />
+                <div class="bt-input__field">
+                  <input class="bt-input__text" type="text" placeholder="Search" oninput="sbxInput(this)" />
                 </div>
                 <div class="stb-searchbox-kbd">Tab</div>
               </div>
@@ -605,12 +606,12 @@ function standartSidebarCodeSnippet(state) {
   </div>
   <div class="stb-body">
     <div class="stb-search-wrap">
-      <div class="bt-searchbox bt-searchbox--md">
-        <div class="bt-searchbox__control">
-          <span class="bt-searchbox__icon"><!-- search icon --></span>
+      <div class="bt-input bt-searchbox bt-input--md">
+        <div class="bt-input__control">
+          <span class="bt-icon"><!-- search icon --></span>
         </div>
-        <div class="bt-searchbox__field">
-          <input class="bt-searchbox__text" type="text" placeholder="Search" />
+        <div class="bt-input__field">
+          <input class="bt-input__text" type="text" placeholder="Search" />
         </div>
         <div class="stb-searchbox-kbd">Tab</div>
       </div>
@@ -2699,110 +2700,165 @@ PAGES_WEB['components/switch'] = {
 };
 
 // ── Searchbox ────────────────────────────────────────────────────
-const _sbxIconClear = `<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="1.5" y1="1.5" x2="8.5" y2="8.5"/><line x1="8.5" y1="1.5" x2="1.5" y2="8.5"/></svg>`;
+// Figma "Inputs NEW" › SearchBox (node 1304:138807 Basic, 1306:139744
+// Advanced Filtered) — .bt-input çekirdeğinin (Base Input) üzerine
+// kurulu, bkz. styles.css "BASE INPUT" bloğu.
+const sbxIconClear = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
 
 const SBX_SIZE_OPTS = [
+  { key: 'sm', label: 'Sm (Default)' },
+  { key: 'md', label: 'Md' },
   { key: 'lg', label: 'Lg' },
-  { key: 'md', label: 'Md (Default)' },
-  { key: 'sm', label: 'Sm' },
+];
+const SBX_TYPE_OPTS = [
+  { key: 'basic',              label: 'Basic' },
+  { key: 'advanced-filtered',  label: 'Advanced Filtered' },
 ];
 const SBX_STATE_VARIANTS = [
   { key: 'default',  label: 'Default' },
   { key: 'hover',    label: 'Hover' },
+  { key: 'focused',  label: 'Focused' },
   { key: 'active',   label: 'Active' },
   { key: 'filled',   label: 'Filled' },
   { key: 'disabled', label: 'Disabled' },
 ];
 
+// Gerçek bir input gibi çalışsın diye: yazınca Clear butonu CANLI DOM'a eklenir,
+// silince kaldırılır — sadece bir CSS class toggle'ı değil (o zaman görsel
+// hiçbir şey değişmezdi, çünkü .bt-input--filled'ın kendi CSS kuralı yok, gerçek
+// "filled" görünümü zaten native <input> metninin kendisi). Projelerde kopyala-
+// yapıştır edildiğinde de aynen bu şekilde çalışması beklenen STANDART davranış.
+function _sbxClearBtnHtml() {
+  return `<div class="bt-input__control bt-input__control--fixed bt-input__control--clear bt-input__control--clickable" onclick="sbxClear(this)"><span class="bt-icon">${sbxIconClear}</span></div>`;
+}
 function sbxInput(el) {
-  el.closest('.bt-searchbox').classList.toggle('bt-searchbox--filled', el.value.length > 0);
+  const box = el.closest('.bt-input');
+  const hasValue = el.value.length > 0;
+  box.classList.toggle('bt-input--filled', hasValue);
+  let clearBtn = box.querySelector('.bt-input__control--clear');
+  if (hasValue && !clearBtn) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = _sbxClearBtnHtml();
+    const filterBtn = box.querySelector('.bt-input__control--filter');
+    box.insertBefore(wrap.firstElementChild, filterBtn || null);
+  } else if (!hasValue && clearBtn) {
+    clearBtn.remove();
+  }
 }
 function sbxClear(el) {
-  const box = el.closest('.bt-searchbox');
-  const input = box.querySelector('.bt-searchbox__text');
+  const box = el.closest('.bt-input');
+  const input = box.querySelector('.bt-input__text');
   input.value = '';
-  box.classList.remove('bt-searchbox--filled');
+  box.classList.remove('bt-input--filled');
+  el.remove();
   input.focus();
+}
+// Figma'da filtre butonunun tıklama davranışı tanımlı değil (sadece görsel) —
+// gerçek bir filtre paneli entegrasyonu ileride eklenecek, şimdilik yalnızca
+// bir açık/kapalı class'ı toggle'lıyor.
+function sbxFilterToggle(el) {
+  el.closest('.bt-input').classList.toggle('bt-input--filter-open');
 }
 
 function _sbxCls(state, size) {
-  const parts = ['bt-searchbox', `bt-searchbox--${size}`];
-  if (state !== 'default') parts.push(`bt-searchbox--${state}`);
+  const parts = ['bt-input', 'bt-searchbox', `bt-input--${size}`];
+  if (state !== 'default') parts.push(`bt-input--${state}`);
   return parts.join(' ');
 }
 
 function sbxPreview(state, props = {}) {
-  const { size = 'sm' } = props;
+  const { size = 'sm', type = 'basic' } = props;
   const cls = _sbxCls(state, size);
   const disabled = state === 'disabled';
   const filled = state === 'filled';
-  const clearHtml = filled ? `
-        <div class="bt-searchbox__control bt-searchbox__control--clickable" onclick="sbxClear(this)">
-          <span class="bt-searchbox__icon">${_sbxIconClear}</span>
+  const active = state === 'active';
+  const advanced = type === 'advanced-filtered';
+  const clearHtml = filled ? _sbxClearBtnHtml() : '';
+  const filterHtml = advanced ? `
+        <div class="bt-input__control bt-input__control--fixed bt-input__control--filter bt-input__control--clickable" onclick="sbxFilterToggle(this)">
+          <span class="bt-icon">${sbxIconFilter}</span>
         </div>` : '';
+  // Active state'te Figma "Text Content" katmanı gerçek bir <input> değil,
+  // statik metin + ayrı bir "Cursor" dikdörtgeni (1px×16px, --bt-base-intense,
+  // metne 0 gap ile bitişik) — "yazılıyor" demosu için. Gerçek <input>'ta bu
+  // görseli manuel taklit etmiyoruz (native caret zaten focus'ta ücretsiz
+  // geliyor) — sadece bu statik önizlemede Figma'ya sadık kalıyoruz.
+  const fieldHtml = active ? `
+          <span class="bt-input__text" style="display:inline-flex;flex:0 1 auto;width:auto;white-space:nowrap;">Placeholder Text<span style="display:inline-block;width:1px;height:16px;background:var(--bt-base-intense,#404040);flex-shrink:0;"></span></span>` : `
+          <input class="bt-input__text" type="text" placeholder="Placeholder Text"${filled ? ' value="Placeholder Text"' : ''}${disabled ? ' disabled' : ''} oninput="sbxInput(this)" />`;
   return `
     <div style="display:flex;align-items:center;justify-content:center;padding:16px;">
       <div class="${cls}" style="max-width:420px;">
-        <div class="bt-searchbox__control">
-          <span class="bt-searchbox__icon">${sbxIconSearch}</span>
+        <div class="bt-input__control">
+          <span class="bt-icon">${sbxIconSearch}</span>
         </div>
-        <div class="bt-searchbox__field">
-          <input class="bt-searchbox__text" type="text" placeholder="Placeholder Text"${filled ? ' value="Placeholder Text"' : ''}${disabled ? ' disabled' : ''} oninput="sbxInput(this)" />
-        </div>${clearHtml}
+        <div class="bt-input__field">${fieldHtml}
+        </div>${clearHtml}${filterHtml}
       </div>
     </div>`;
 }
 
 function sbxCode(state, props = {}) {
-  const { size = 'sm' } = props;
+  const { size = 'sm', type = 'basic' } = props;
   const cls = _sbxCls(state, size);
   const disabled = state === 'disabled';
   const filled = state === 'filled';
-  const clearBlock = filled ? `\n  <div class="bt-searchbox__control">\n    <!-- clear icon 10x10 -->\n  </div>` : '';
+  const advanced = type === 'advanced-filtered';
+  const clearBlock = filled ? `\n  <div class="bt-input__control bt-input__control--fixed bt-input__control--clear bt-input__control--clickable">\n    <!-- Input Clear Button — Lucide x -->\n  </div>` : '';
+  const filterBlock = advanced ? `\n  <div class="bt-input__control bt-input__control--fixed bt-input__control--filter bt-input__control--clickable">\n    <!-- Input Advanced Filter Button — Lucide sliders-horizontal -->\n  </div>` : '';
   const code = `<div class="${cls}">
-  <div class="bt-searchbox__control">
-    <!-- search icon 14x14 -->
+  <div class="bt-input__control">
+    <!-- search icon (Lucide search) -->
   </div>
-  <div class="bt-searchbox__field">
-    <input class="bt-searchbox__text" type="text" placeholder="Placeholder Text"${filled ? ' value="Placeholder Text"' : ''}${disabled ? ' disabled' : ''} />
-  </div>${clearBlock}
+  <div class="bt-input__field">
+    <input class="bt-input__text" type="text" placeholder="Placeholder Text"${filled ? ' value="Placeholder Text"' : ''}${disabled ? ' disabled' : ''} />
+  </div>${clearBlock}${filterBlock}
 </div>`;
   const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   return `<pre class="code-block">${esc(code)}</pre>`;
 }
 
 function sbxCss(state, props = {}) {
-  const { size = 'sm' } = props;
+  const { size = 'sm', type = 'basic' } = props;
+  const advanced = type === 'advanced-filtered';
+  const filled = state === 'filled';
   const lines = [];
   const p = (k, v) => `  ${k}: ${v};`;
 
-  lines.push(`/* Searchbox · ${state.charAt(0).toUpperCase()+state.slice(1)}${size !== 'sm' ? ` · ${size.charAt(0).toUpperCase()+size.slice(1)}` : ''} */`);
+  lines.push(`/* SearchBox (.bt-input çekirdeği) · ${state.charAt(0).toUpperCase()+state.slice(1)}${size !== 'sm' ? ` · ${size.charAt(0).toUpperCase()+size.slice(1)}` : ''} */`);
   lines.push('');
 
-  lines.push('.bt-searchbox {');
+  lines.push('.bt-input {');
   const h = size === 'md' ? '32px' : size === 'lg' ? '36px' : '28px';
   lines.push(p('height', h));
-  lines.push(p('border-radius', 'var(--bt-radius-md)  /* 6px */'));
-  lines.push(p('background', state === 'disabled' ? 'var(--bt-surface-secondary-subtle)  /* #e6e6e6 */' : 'var(--bt-surface-primary-default)  /* #ffffff */'));
-  const borderColor = (state === 'hover' || state === 'active') ? 'var(--bt-border-brand-default)  /* #0d4e97 */' : 'var(--bt-border-primary-default)  /* #d4d4d4 */';
+  lines.push(p('border-radius', 'var(--bt-radius-sm)  /* 4px */'));
+  lines.push(p('background', state === 'disabled' ? 'var(--bt-base-subtle)  /* #f5f5f5 */' : 'var(--bt-base-default)  /* #ffffff */'));
+  const borderColor = (state === 'hover' || state === 'focused' || state === 'active') ? 'var(--bt-border-brand-default)  /* #0d4e97 */' : 'var(--bt-border-primary-default)  /* #d4d4d4 */';
   lines.push(p('border', `1px solid ${borderColor}`));
-  if (state === 'active') lines.push(p('box-shadow', '0 0 0 3px rgba(13,78,151,0.25)'));
+  if (state === 'focused' || state === 'active') lines.push(p('box-shadow', '0 0 0 3px rgba(13,78,151,0.25)'));
   lines.push('}');
 
   lines.push('');
-  lines.push('.bt-searchbox__control {');
+  lines.push('.bt-input__control {');
   const ctrlPad = size === 'md' ? 'var(--bt-space-xs)  /* 4px */' : size === 'lg' ? 'var(--bt-space-sm)  /* 6px */' : 'var(--bt-space-2xs)  /* 2px */';
   lines.push(p('padding', ctrlPad));
   lines.push('}');
 
+  if (filled || advanced) {
+    lines.push('');
+    lines.push('.bt-input__control--fixed {');
+    lines.push(p('padding', 'var(--bt-space-2xs)  /* 2px — boyuttan bağımsız, her zaman sabit */'));
+    lines.push('}');
+  }
+
   lines.push('');
-  lines.push('.bt-searchbox__field {');
+  lines.push('.bt-input__field {');
   const fieldPad = size === 'md' ? 'var(--bt-space-sm) var(--bt-space-xs)  /* 6px 4px */' : size === 'lg' ? 'var(--bt-space-md) var(--bt-space-xs)  /* 8px 4px */' : 'var(--bt-space-xs)  /* 4px */';
   lines.push(p('padding', fieldPad));
   lines.push('}');
 
   lines.push('');
-  lines.push('.bt-searchbox__text {');
+  lines.push('.bt-input__text {');
   lines.push(p('color', state === 'filled' ? 'var(--bt-text-primary-default)  /* #1a1a1a */' : 'var(--bt-text-primary-muted)  /* #a3a3a3 (placeholder) */'));
   lines.push('}');
 
@@ -2812,7 +2868,7 @@ function sbxCss(state, props = {}) {
 
 PAGES_WEB['components/searchbox'] = {
   tabs: ['Overview', 'Examples', 'CSS Properties', 'Usage'],
-  toc:  ['States', 'Sizes'],
+  toc:  ['Anatomy', 'Sizes', 'States', 'Types', 'Basic', 'Advanced Filtered'],
   render(tab) {
     const title = 'SearchBox';
     const tk = v => `<code style="font-size:12px;font-family:var(--mono)">${v}</code>`;
@@ -2821,17 +2877,32 @@ PAGES_WEB['components/searchbox'] = {
       <h2>States</h2>
       ${registerPlayground({
         id: 'pgd-sbx-ex',
-        variants: SBX_STATE_VARIANTS,
+        variantLabel: 'Type',
+        variants: SBX_TYPE_OPTS,
         props: [
-          { key: 'size', label: 'Size', options: SBX_SIZE_OPTS, default: 'md' },
+          { key: 'size',  label: 'Size',  options: SBX_SIZE_OPTS,     default: 'sm' },
+          { key: 'state', label: 'State', options: SBX_STATE_VARIANTS, default: 'default' },
         ],
-        preview: (state, p) => sbxPreview(state, p),
-        code:    (state, p) => sbxCode(state, p),
+        preview: (type, p) => sbxPreview(p.state, { ...p, type }),
+        code:    (type, p) => sbxCode(p.state, { ...p, type }),
       })}
+
+      <h2>Types</h2>
+      <table class="token-table">
+        <thead><tr><th>Type</th><th>Default</th><th>Filled</th></tr></thead>
+        <tbody>
+          ${SBX_TYPE_OPTS.map(t => `
+          <tr>
+            <td><span class="token-name">${t.label}</span></td>
+            <td>${sbxPreview('default', { size: 'sm', type: t.key })}</td>
+            <td>${sbxPreview('filled', { size: 'sm', type: t.key })}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
     `};
 
     if (tab === 'CSS Properties') return { title, html: `
-      <p class="page-desc">SearchBox için kullanılan design token–CSS değişken eşleşmeleri.</p>
+      <p class="page-desc">SearchBox için kullanılan design token–CSS değişken eşleşmeleri. Görsel shell (border/bg/radius/height) ${tk('.bt-input')} çekirdek class'ında tanımlıdır — SearchBox onu aynı elementte kompoze eder, kendi başına ek shell CSS'i taşımaz.</p>
       <h2>Sizes</h2>
       <table class="token-table">
         <thead><tr><th>Size</th><th>Height</th><th>Control padding</th><th>Field padding</th></tr></thead>
@@ -2847,10 +2918,12 @@ PAGES_WEB['components/searchbox'] = {
         <tbody>
           <tr><td>Default</td><td>border</td><td>${tk('--bt-border-primary-default')}</td><td>#d4d4d4</td></tr>
           <tr><td>Hover</td><td>border</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
+          <tr><td rowspan="2">Focused</td><td>border</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
+          <tr><td>box-shadow</td><td colspan="2">0 0 0 3px rgba(13,78,151,0.25)</td></tr>
           <tr><td rowspan="2">Active</td><td>border</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
           <tr><td>box-shadow</td><td colspan="2">0 0 0 3px rgba(13,78,151,0.25)</td></tr>
           <tr><td>Filled</td><td>color (text)</td><td>${tk('--bt-text-primary-default')}</td><td>#1a1a1a</td></tr>
-          <tr><td rowspan="2">Disabled</td><td>background</td><td>${tk('--bt-surface-secondary-subtle')}</td><td>#e6e6e6</td></tr>
+          <tr><td rowspan="2">Disabled</td><td>background</td><td>${tk('--bt-base-subtle')}</td><td>#f5f5f5</td></tr>
           <tr><td>border</td><td>${tk('--bt-border-primary-default')}</td><td>#d4d4d4 (değişmez)</td></tr>
         </tbody>
       </table>
@@ -2858,24 +2931,29 @@ PAGES_WEB['components/searchbox'] = {
       <table class="token-table">
         <thead><tr><th>Property</th><th>Token</th><th>Value</th></tr></thead>
         <tbody>
-          <tr><td>border-radius</td><td>${tk('--bt-radius-md')}</td><td>6px</td></tr>
-          <tr><td>background (Default/Hover/Active/Filled)</td><td>${tk('--bt-surface-primary-default')}</td><td>#ffffff</td></tr>
+          <tr><td>border-radius</td><td>${tk('--bt-radius-sm')}</td><td>4px</td></tr>
+          <tr><td>background (Default/Hover/Active/Filled)</td><td>${tk('--bt-base-default')}</td><td>#ffffff</td></tr>
           <tr><td>Placeholder metin rengi</td><td>${tk('--bt-text-primary-muted')}</td><td>#a3a3a3</td></tr>
           <tr><td>font</td><td>${tk('--bt-text-xs-regular')}</td><td>400 · 12px / 16px</td></tr>
-          <tr><td>Icon kutusu</td><td>—</td><td>24 × 24px (search ikon 14×14, clear ikon 10×10)</td></tr>
+          <tr><td>İkon kutusu (leading, boyuta göre)</td><td>—</td><td>28/32/36px (sm/md/lg) — içinde her zaman sabit 24×24 ${tk('.bt-icon')} (16×16 svg)</td></tr>
+          <tr><td>İkon kutusu (trailing — Clear/Filter)</td><td>—</td><td>sabit 28×28, boyuttan bağımsız (${tk('.bt-input__control--fixed')})</td></tr>
         </tbody>
       </table>
       <h2>Class Reference</h2>
       <table class="token-table">
         <thead><tr><th>Class</th><th>Element</th><th>Açıklama</th></tr></thead>
         <tbody>
-          <tr><td>${tk('.bt-searchbox')}</td><td>Wrapper</td><td>flex row, border+radius+bg — tüm state stilleri burada</td></tr>
-          <tr><td>${tk('.bt-searchbox--sm/--md/--lg')}</td><td>Wrapper</td><td>Yükseklik ve iç padding'leri belirler</td></tr>
-          <tr><td>${tk('.bt-searchbox--hover/--active/--disabled')}</td><td>Wrapper</td><td>State'i zorlamak için (docs amaçlı) — gerçek kullanımda :hover/:focus-within otomatik çalışır</td></tr>
-          <tr><td>${tk('.bt-searchbox__control')}</td><td>İkon kutusu</td><td>Search (sol) ve Clear (sağ, sadece değer varken) ikonlarını saran kare alan</td></tr>
-          <tr><td>${tk('.bt-searchbox__icon')}</td><td>İkon</td><td>24×24, muted renk</td></tr>
-          <tr><td>${tk('.bt-searchbox__field')}</td><td>Input sarmalayıcı</td><td>flex:1, size'a göre padding</td></tr>
-          <tr><td>${tk('.bt-searchbox__text')}</td><td>Input</td><td>Gerçek <code style="font-family:var(--mono)">&lt;input type="text"&gt;</code>, border/outline sıfırlanmış</td></tr>
+          <tr><td>${tk('.bt-input')}</td><td>Çekirdek wrapper</td><td>Base Input shell'i — flex row, border+radius+bg+height+state renkleri burada (bkz. styles.css "BASE INPUT")</td></tr>
+          <tr><td>${tk('.bt-searchbox')}</td><td>Wrapper</td><td>SearchBox kimliği — aynı elementte ${tk('.bt-input')} ile birlikte kullanılır, kendi görsel CSS'i yok</td></tr>
+          <tr><td>${tk('.bt-input--sm/--md/--lg')}</td><td>Wrapper</td><td>Yükseklik ve iç padding'leri belirler</td></tr>
+          <tr><td>${tk('.bt-input--hover/--active/--disabled')}</td><td>Wrapper</td><td>State'i zorlamak için (docs amaçlı) — gerçek kullanımda :hover/:focus-within otomatik çalışır</td></tr>
+          <tr><td>${tk('.bt-input__control')}</td><td>İkon kutusu (leading)</td><td>Boyuta göre padding alır, içine her zaman ${tk('.bt-icon')} konur</td></tr>
+          <tr><td>${tk('.bt-input__control--fixed')}</td><td>İkon kutusu (trailing)</td><td>Clear/Filter — boyuttan bağımsız sabit padding</td></tr>
+          <tr><td>${tk('.bt-input__control--clear')} / ${tk('--filter')}</td><td>İkon kutusu (trailing)</td><td>Saf kimlik class'ı, kendi CSS'i yok — sırasıyla Figma "Input Clear Button" / "Input Advanced Filter Button" component'ine karşılık gelir</td></tr>
+          <tr><td>${tk('.bt-input__control--clickable')}</td><td>İkon kutusu</td><td>cursor:pointer — Clear ve Filter butonlarında</td></tr>
+          <tr><td>${tk('.bt-icon')}</td><td>İkon</td><td>Global 24×24 ikon sarmalayıcı, içindeki svg 16×16'ya zorlanır</td></tr>
+          <tr><td>${tk('.bt-input__field')}</td><td>Input sarmalayıcı</td><td>flex:1, size'a göre padding — Figma "Text Content" katmanı (TextBox'taki ${tk('.bt-tbx__field')} ile aynı isimlendirme)</td></tr>
+          <tr><td>${tk('.bt-input__text')}</td><td>Input</td><td>Gerçek <code style="font-family:var(--mono)">&lt;input type="text"&gt;</code>, border/outline sıfırlanmış</td></tr>
         </tbody>
       </table>
     `};
@@ -2888,12 +2966,14 @@ PAGES_WEB['components/searchbox'] = {
         <li>Kullanıcı bir şey yazdığında Clear (X) aksiyonunu göster, tek tıkla temizlensin</li>
         <li>Placeholder'da ne aranacağını belirt (örn. "Sipariş numarası ara")</li>
         <li>Sayfa/tablo genişliğine göre Sm/Md/Lg boyutlarından uygun olanı seç</li>
+        <li>Basit bir metin araması yeterliyse Basic, kullanıcı ek kriterlerle (tarih aralığı, durum vb.) daraltabilmeliyse Advanced Filtered kullan</li>
       </ul>
       <h2>Don't</h2>
       <ul>
         <li>SearchBox'ı genel bir form text field'ı olarak kullanma — o iş için Textarea bileşenini tercih et</li>
         <li>Disabled durumda arama sonucu gösterme; boş/yükleniyor state'i ayrıca ele al</li>
         <li>Token dışında hardcoded renk/spacing kullanma; her zaman <code style="font-family:var(--mono)">--bt-*</code> tokenlarını kullan</li>
+        <li>Filter butonuna gerçek bir filtre paneli bağlamadan Advanced Filtered kullanma — buton şu an yalnızca görsel bir yer tutucudur, tıklamada hiçbir panel açmaz</li>
       </ul>
     `};
 
@@ -2901,40 +2981,33 @@ PAGES_WEB['components/searchbox'] = {
     return { title, html: `
       ${registerPlayground({
         id: 'pgd-sbx-overview',
-        variants: SBX_STATE_VARIANTS,
+        variantLabel: 'Type',
+        variants: SBX_TYPE_OPTS,
         props: [
-          { key: 'size', label: 'Size', options: SBX_SIZE_OPTS, default: 'md' },
+          { key: 'size',  label: 'Size',  options: SBX_SIZE_OPTS,      default: 'sm' },
+          { key: 'state', label: 'State', options: SBX_STATE_VARIANTS, default: 'default' },
         ],
-        preview: (state, p) => sbxPreview(state, p),
-        code:    (state, p) => sbxCode(state, p),
-        css:     (state, p) => sbxCss(state, p),
+        preview: (type, p) => sbxPreview(p.state, { ...p, type }),
+        code:    (type, p) => sbxCode(p.state, { ...p, type }),
+        css:     (type, p) => sbxCss(p.state, { ...p, type }),
       })}
 
-      <p class="page-desc">Arama/filtreleme için kullanılan input alanı. Üç boyut (Sm / Md / Lg) ve beş state (Default / Hover / Active / Filled / Disabled) destekler. Sol tarafta sabit arama ikonu, değer girildiğinde sağda temizleme (X) aksiyonu belirir.</p>
+      <p class="page-desc">Arama/filtreleme için kullanılan input alanı, Base Input çekirdeğinin (${tk('.bt-input')}) üzerine kurulur. İki tip (Basic / Advanced Filtered), üç boyut (Sm / Md / Lg, varsayılan Sm) ve altı state (Default / Hover / Focused / Active / Filled / Disabled) destekler. Sol tarafta sabit arama ikonu, değer girildiğinde sağda temizleme (X) aksiyonu belirir.</p>
 
-      <h2 id="States">States</h2>
-      <table class="token-table">
-        <thead><tr><th>State</th><th>Preview</th></tr></thead>
-        <tbody>
-          ${SBX_STATE_VARIANTS.map(s => `
-          <tr>
-            <td><span class="token-name">${s.label}</span></td>
-            <td>${sbxPreview(s.key, { size: 'sm' })}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-
-      <h2>Anatomy</h2>
-      <p class="page-desc">SearchBox konteynerinin her state için sınır ve arka plan token'larını listeler. Default state ${tk('--bt-border-primary-default')} griyle başlar; hover ve active'de ${tk('--bt-border-brand-default')} maviye döner, active'de ek olarak mavi focus ring eklenir. Blazor/Telerik'te ${tk('TelerikTextBox')} bileşenine ${tk('.bt-sbx')} CSS sınıfları uygulanır.</p>
+      <h2 id="Anatomy">Anatomy</h2>
+      <p class="page-desc">SearchBox'ın görsel shell'i (border/bg/radius/height) ${tk('.bt-input')} çekirdek class'ından gelir — SearchBox aynı elemente sadece kendi kimliğini (${tk('.bt-searchbox')}) ve ikon/kontrol içeriğini ekler. Default state ${tk('--bt-border-primary-default')} griyle başlar; hover'da ${tk('--bt-border-brand-default')} maviye döner. Focused ve Active konteyner düzeyinde birebir aynıdır (mavi border + focus ring, ${tk('.bt-input--focused')}/${tk('.bt-input--active')} aynı CSS kuralını paylaşır — TextBox'taki ${tk('.bt-tbx--focused')}/${tk('.bt-tbx--active')} ile aynı desen), ama Figma'da Text Content katmanı Active'de ayrıca değişir: metin rengi ${tk('--bt-text-primary-muted')}'tan ${tk('--bt-text-primary-default')}'a (#1a1a1a) döner ve metnin hemen bitişiğine (0 gap) ${tk('--bt-base-intense')} (#404040) renginde, tam 1×16px'lik bir Cursor dikdörtgeni eklenir — "yazılıyor" anının statik bir mockup'ı. Bu, gerçek bir CSS state'i değil (native ${tk('<input>')} focus'tayken kendi imlecini zaten ücretsiz gösterir) — sadece bu dokümantasyon önizlemesinde Figma'ya sadık kalmak için statik metin + Cursor span'ı olarak taklit edilir. Metin ${tk('--bt-text-xs-regular')} fontuyla, placeholder ${tk('--bt-text-primary-muted')} rengiyle gösterilir. Blazor/Telerik'te ${tk('TelerikTextBox')} bileşenine ${tk('.bt-sbx')} CSS sınıfları uygulanır.</p>
       <table class="token-table" style="margin-top:12px">
         <thead><tr><th>Element</th><th>Property</th><th>Token</th><th>Value</th></tr></thead>
         <tbody>
-          <tr><td>Container · Default</td><td>Border</td><td>${tk('--bt-border-primary-default')}</td><td>#d4d4d4</td></tr>
-          <tr><td>Container · Hover / Active</td><td>Border</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
-          <tr><td>Container · Active</td><td>Focus ring</td><td>—</td><td>0 0 0 3px rgba(13,78,151,.25)</td></tr>
-          <tr><td>Container · Disabled</td><td>Background</td><td>${tk('--bt-surface-secondary-subtle')}</td><td>#e6e6e6</td></tr>
-          <tr><td>Container</td><td>Border radius</td><td>${tk('--bt-radius-md')}</td><td>6px</td></tr>
-          <tr><td>Container</td><td>Background (Default/Hover/Active)</td><td>${tk('--bt-surface-primary-default')}</td><td>#ffffff</td></tr>
+          <tr><td>Container (${tk('.bt-input')}) · Default</td><td>Border</td><td>${tk('--bt-border-primary-default')}</td><td>#d4d4d4</td></tr>
+          <tr><td>Container · Hover / Focused / Active</td><td>Border</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
+          <tr><td>Container · Focused / Active</td><td>Focus ring</td><td>—</td><td>0 0 0 3px rgba(13,78,151,.25)</td></tr>
+          <tr><td>Container · Disabled</td><td>Background</td><td>${tk('--bt-base-subtle')}</td><td>#f5f5f5</td></tr>
+          <tr><td>Container</td><td>Border radius</td><td>${tk('--bt-radius-sm')}</td><td>4px</td></tr>
+          <tr><td>Container</td><td>Background (Default/Hover/Active)</td><td>${tk('--bt-base-default')}</td><td>#ffffff</td></tr>
+          <tr><td>Input text</td><td>Font</td><td>${tk('--bt-text-xs-regular')}</td><td>400 · 12px / 16px</td></tr>
+          <tr><td>Input text · Filled</td><td>Color</td><td>${tk('--bt-text-primary-default')}</td><td>#1a1a1a</td></tr>
+          <tr><td>Placeholder</td><td>Color</td><td>${tk('--bt-text-primary-muted')}</td><td>#a3a3a3</td></tr>
         </tbody>
       </table>
 
@@ -2948,17 +3021,91 @@ PAGES_WEB['components/searchbox'] = {
         </tbody>
       </table>
 
-      <h2>Anatomy</h2>
-      <p class="page-desc">Metin, placeholder ve ikon öğelerinin tipografi ve boyut token'larını listeler. Input metni ${tk('--bt-text-xs-regular')} fontuyla, placeholder ${tk('--bt-text-primary-muted')} rengiyle gösterilir; sabit 24×24px ikon kutusu içindeki arama ve temizleme ikonları sabit piksel değerleriyle tanımlanmıştır. Blazor/Telerik'te ${tk('TelerikTextBox')} içinde custom ikon slot'larıyla uygulanır.</p>
-      <table class="token-table" style="margin-top:12px">
-        <thead><tr><th>Element</th><th>Property</th><th>Token</th><th>Value</th></tr></thead>
+      <h2 id="States">States</h2>
+      <table class="token-table">
+        <thead><tr><th>State</th><th>Preview</th></tr></thead>
         <tbody>
-          <tr><td>Input text</td><td>Font</td><td>${tk('--bt-text-xs-regular')}</td><td>400 · 12px / 16px</td></tr>
-          <tr><td>Input text · Filled</td><td>Color</td><td>${tk('--bt-text-primary-default')}</td><td>#1a1a1a</td></tr>
-          <tr><td>Placeholder</td><td>Color</td><td>${tk('--bt-text-primary-muted')}</td><td>#a3a3a3</td></tr>
-          <tr><td>Icon box</td><td>Size</td><td>—</td><td>24 × 24px</td></tr>
-          <tr><td>Search icon</td><td>Size</td><td>—</td><td>14 × 14px</td></tr>
-          <tr><td>Clear icon</td><td>Size</td><td>—</td><td>10 × 10px</td></tr>
+          ${SBX_STATE_VARIANTS.map(s => `
+          <tr>
+            <td><span class="token-name">${s.label}</span></td>
+            <td>${sbxPreview(s.key, { size: 'sm' })}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+
+      <h2 id="Types">Types</h2>
+      <p class="page-desc">SearchBox iki tip destekler — ikisi de aynı ${tk('.bt-input')} çekirdeğini ve boyutları kullanır, yalnızca sağdaki trailing kontrol farklıdır. ${tk('Basic')}: yalnızca sol arama ikonu, değer girildiğinde sağda Clear (X) belirir. ${tk('Advanced Filtered')}: Basic'in üstüne, state'ten bağımsız her zaman görünen bir Filter (sliders-horizontal) butonu eklenir; Filled state'te Clear ve Filter yan yana (Clear önce) görünür. Aşağıda her tip kendi bölümünde tüm state'leriyle ele alınır.</p>
+      <table class="token-table" style="margin-bottom:40px;">
+        <thead><tr><th>Type</th><th>Trailing kontrol</th><th>Preview (Default / Filled)</th></tr></thead>
+        <tbody>
+          ${SBX_TYPE_OPTS.map(t => `
+          <tr>
+            <td><span class="token-name">${t.label}</span></td>
+            <td>${t.key === 'basic' ? 'Yalnızca Filled\'da Clear' : 'Her zaman Filter, Filled\'da + Clear'}</td>
+            <td>${sbxPreview('default', { size: 'sm', type: t.key })}${sbxPreview('filled', { size: 'sm', type: t.key })}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+
+      <h2 id="Basic">Basic</h2>
+      <p class="page-desc">Genel amaçlı arama alanı — yalnızca sol arama ikonu ve metin taşır, değer girildiğinde sağda tek bir Clear (X) aksiyonu belirir. Ek kriter/filtre gerekmeyen basit liste/tablo aramalarında varsayılan tercih. Clear butonu ${tk('sbxClear()')} ile input'u temizler ve odağı geri verir; HTML'de ekstra bir kontrol elementi eklenmez.</p>
+      ${registerPlayground({
+        id: 'pgd-sbx-basic-sec',
+        variantLabel: 'Size',
+        variants: SBX_SIZE_OPTS,
+        props: [{ key: 'state', label: 'State', options: SBX_STATE_VARIANTS, default: 'default' }],
+        preview: (size, p) => sbxPreview(p.state, { ...p, size, type: 'basic' }),
+        code:    (size, p) => sbxCode(p.state, { ...p, size, type: 'basic' }),
+        css:     (size, p) => sbxCss(p.state, { ...p, size, type: 'basic' }),
+      })}
+      <h3>States</h3>
+      <table class="token-table">
+        <thead><tr><th>State</th><th>Preview</th></tr></thead>
+        <tbody>
+          ${SBX_STATE_VARIANTS.map(s => `
+          <tr>
+            <td><span class="token-name">${s.label}</span></td>
+            <td>${sbxPreview(s.key, { size: 'sm', type: 'basic' })}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <h3>Anatomy</h3>
+      <table class="token-table">
+        <thead><tr><th>Element</th><th>Class</th><th>Not</th></tr></thead>
+        <tbody>
+          <tr><td>Arama ikonu</td><td>${tk('.bt-input__control')} > ${tk('.bt-icon')}</td><td>Lucide ${tk('search')}, sol, boyuta göre skalalanan kutu</td></tr>
+          <tr><td>Clear butonu</td><td>${tk('.bt-input__control--fixed.bt-input__control--clear.bt-input__control--clickable')}</td><td>Figma "Input Clear Button" — Lucide ${tk('x')}, sadece Filled'da, sabit 28×28</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="Advanced Filtered">Advanced Filtered</h2>
+      <p class="page-desc">Basic'e ek olarak, kullanıcının arama dışında ek kriterlerle (tarih aralığı, durum, kategori vb.) daraltabildiği listelerde kullanılır — sağda her zaman görünen bir Filter (sliders-horizontal) butonu taşır. Filled state'te Clear ve Filter yan yana görünür (Clear solda, Filter sağda). Filter butonu şu an yalnızca görseldir; ${tk('sbxFilterToggle()')} bir class toggle'lar, gerçek filtre paneli entegrasyonu bu component'in kapsamı dışında, ayrıca eklenmelidir.</p>
+      ${registerPlayground({
+        id: 'pgd-sbx-advanced-filtered-sec',
+        variantLabel: 'Size',
+        variants: SBX_SIZE_OPTS,
+        props: [{ key: 'state', label: 'State', options: SBX_STATE_VARIANTS, default: 'default' }],
+        preview: (size, p) => sbxPreview(p.state, { ...p, size, type: 'advanced-filtered' }),
+        code:    (size, p) => sbxCode(p.state, { ...p, size, type: 'advanced-filtered' }),
+        css:     (size, p) => sbxCss(p.state, { ...p, size, type: 'advanced-filtered' }),
+      })}
+      <h3>States</h3>
+      <table class="token-table">
+        <thead><tr><th>State</th><th>Preview</th></tr></thead>
+        <tbody>
+          ${SBX_STATE_VARIANTS.map(s => `
+          <tr>
+            <td><span class="token-name">${s.label}</span></td>
+            <td>${sbxPreview(s.key, { size: 'sm', type: 'advanced-filtered' })}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <h3>Anatomy</h3>
+      <table class="token-table">
+        <thead><tr><th>Element</th><th>Class</th><th>Not</th></tr></thead>
+        <tbody>
+          <tr><td>Filter butonu</td><td>${tk('.bt-input__control--fixed.bt-input__control--filter.bt-input__control--clickable')}</td><td>Figma "Input Advanced Filter Button" — Lucide ${tk('sliders-horizontal')}, sağda her zaman görünür, sabit 28×28, boyuttan bağımsız</td></tr>
+          <tr><td>Clear + Filter (Filled)</td><td>—</td><td>Clear önce, Filter sonra render edilir — ikisi de aynı sabit 28×28 kutu</td></tr>
         </tbody>
       </table>
     `};
@@ -4001,57 +4148,234 @@ function tbxCss(state, props = {}) {
   return `<pre class="code-block" style="margin:0;border-radius:0;border:none;min-height:100%;">${esc(lines.join('\n'))}</pre>`;
 }
 
+// ── TextBox (Base Input) ─────────────────────────────────────────
+// SearchBox'ın .bt-input çekirdeğinin üzerine kurulu — sadece TextBox'ın
+// KENDİ sayfası bunu kullanır. _tbxCls/_tbxInputInner/tbxCss (yukarıda)
+// Select LookUp/Dropdown/MultiSelect/Date Picker/Textarea/Data Table
+// Inline-Editing/Accordion/Dialog tarafından reuse edildiği için
+// DOKUNULMADI — bu geçiş sürecinin ilk adımı (bkz. design.md).
+const tbxBaseIconValidation = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`;
+// TBX_SIZE_OPTS'tan (paylaşılan, Select LookUp/Dropdown/Date Picker/Textarea "Md
+// (Default)" diyor, doğrulanmadı) KASITLI olarak ayrı — TextBox'ın kendi Figma
+// kaynağı ("Size=sm (default)") gerçek varsayılanın Sm olduğunu doğruladı.
+const TBX_BASE_SIZE_OPTS = [{ key: 'sm', label: 'Sm (Default)' }, { key: 'md', label: 'Md' }, { key: 'lg', label: 'Lg' }];
+
+function _tbxBaseCls(state, size) {
+  const parts = ['bt-input', 'bt-tbx__box', `bt-input--${size}`];
+  if (state === 'error-focused') {
+    parts.push('bt-input--error', 'bt-input--error-focused');
+  } else if (state !== 'default' && state !== 'filled') {
+    parts.push(`bt-input--${state}`);
+  }
+  return parts.join(' ');
+}
+
+// SearchBox'taki AYNI standart: yazınca Clear butonu canlı DOM'a eklenir,
+// silince kaldırılır (bkz. sbxInput/sbxClear'ın üstündeki not) — projelerde
+// kopyala-yapıştır edildiğinde gerçek bir input gibi çalışsın diye.
+function _tbxBaseClearBtnHtml() {
+  return `<div class="bt-input__control bt-input__control--fixed bt-input__control--clear bt-input__control--clickable" onclick="tbxBaseClear(this)"><span class="bt-icon">${sbxIconClear}</span></div>`;
+}
+function tbxBaseInput(el) {
+  const box = el.closest('.bt-input');
+  const hasValue = el.value.length > 0;
+  box.classList.toggle('bt-input--filled', hasValue);
+  let clearBtn = box.querySelector('.bt-input__control--clear');
+  if (hasValue && !clearBtn) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = _tbxBaseClearBtnHtml();
+    box.appendChild(wrap.firstElementChild);
+  } else if (!hasValue && clearBtn) {
+    clearBtn.remove();
+  }
+}
+function tbxBaseClear(el) {
+  const box = el.closest('.bt-input');
+  const input = box.querySelector('.bt-input__text');
+  input.value = '';
+  box.classList.remove('bt-input--filled');
+  el.remove();
+  input.focus();
+}
+
+function _tbxBaseInner(state) {
+  const isError    = state === 'error' || state === 'error-focused';
+  const isFilled   = state === 'filled';
+  const isDisabled = state === 'disabled';
+  const isReadOnly = state === 'readonly';
+  const isActive   = state === 'active';
+  const validationHtml = isError  ? `<div class="bt-input__control bt-input__control--validation"><span class="bt-icon">${tbxBaseIconValidation}</span></div>` : '';
+  const clearHtml       = isFilled ? _tbxBaseClearBtnHtml() : '';
+  const inputAttrs      = ((isFilled || isReadOnly) ? ' value="Placeholder Text"' : '') + (isDisabled ? ' disabled' : '') + (isReadOnly ? ' readonly' : '');
+  // Active: SearchBox'taki aynı statik cursor mockup'ı (bkz. sbxPreview) — gerçek
+  // bir CSS state değil, sadece Figma'nın "yazılıyor" demosunu yansıtır.
+  const fieldHtml = isActive
+    ? `<span class="bt-input__text" style="display:inline-flex;flex:0 1 auto;width:auto;white-space:nowrap;">Placeholder Text<span style="display:inline-block;width:1px;height:16px;background:var(--bt-base-intense,#404040);flex-shrink:0;"></span></span>`
+    : `<input class="bt-input__text" type="text" placeholder="Placeholder Text"${inputAttrs} oninput="tbxBaseInput(this)" />`;
+  return `<div class="bt-input__field">${fieldHtml}</div>${validationHtml}${clearHtml}`;
+}
+
+// Figma'nın gerçek component property'leri: showLabelText/labelValue,
+// showHintText/hintValue, showErrorText/errorValue — üçü de birbirinden
+// BAĞIMSIZ (Figma'nın "Error" state örneğinde bile showErrorText varsayılanı
+// false; Hint/Error metnini göstermek State'e değil, bu ayrı toggle'lara
+// bağlı). Eski "Required Field" kaldırıldı — Figma'da böyle bir property/
+// text layer YOK (get_metadata ile "Label Value" frame'inin tek çocuğu
+// "Label Text" olduğu doğrulandı), eski (Base Input öncesi) TextBox
+// implementasyonundan kalma bir icattı.
+function _tbxEsc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function tbxBasePreview(state, props = {}) {
+  const { size = 'sm', label = 'on', labelValue = 'Label Text', hint = 'on', hintValue = 'Hint Text', error = 'off', errorValue = 'Error Text' } = props;
+  const isError   = state === 'error' || state === 'error-focused';
+  const metaHtml  = label === 'on' ? `<div class="bt-tbx__meta"><span class="bt-tbx__label">${_tbxEsc(labelValue)}</span></div>` : '';
+  const hintHtml  = hint  === 'on' ? `<span class="bt-tbx__helper">${_tbxEsc(hintValue)}</span>` : '';
+  const errorHtml = error === 'on' ? `<span class="bt-tbx__helper bt-tbx__helper--error">${_tbxEsc(errorValue)}</span>` : '';
+  const outerCls  = `bt-tbx bt-tbx--${size}${isError ? ' bt-tbx--error' : ''}`;
+  return `
+    <div style="padding:24px;width:100%;max-width:420px;margin:0 auto;box-sizing:border-box;">
+      <div class="${outerCls}">
+        ${metaHtml}
+        <div class="${_tbxBaseCls(state, size)}">${_tbxBaseInner(state)}</div>
+        ${hintHtml}${errorHtml}
+      </div>
+    </div>`;
+}
+
+function tbxBaseCode(state, props = {}) {
+  const { size = 'sm', label = 'on', labelValue = 'Label Text', hint = 'on', hintValue = 'Hint Text', error = 'off', errorValue = 'Error Text' } = props;
+  const isError    = state === 'error' || state === 'error-focused';
+  const isFilled   = state === 'filled';
+  const isDisabled = state === 'disabled';
+  const isReadOnly = state === 'readonly';
+  const outerCls   = `bt-tbx bt-tbx--${size}${isError ? ' bt-tbx--error' : ''}`;
+  const boxCls     = _tbxBaseCls(state, size);
+
+  const metaBlock  = label === 'on' ? `<div class="bt-tbx__meta">\n  <span class="bt-tbx__label">${labelValue}</span>\n</div>\n` : '';
+  const valBlock   = isError  ? `\n  <div class="bt-input__control bt-input__control--validation">\n    <!-- Lucide circle-alert -->\n  </div>` : '';
+  const clearBlock = isFilled ? `\n  <div class="bt-input__control bt-input__control--fixed bt-input__control--clear bt-input__control--clickable">\n    <!-- Input Clear Button — Lucide x -->\n  </div>` : '';
+  const hintBlock  = hint  === 'on' ? `\n<span class="bt-tbx__helper">${hintValue}</span>` : '';
+  const errorBlock = error === 'on' ? `\n<span class="bt-tbx__helper bt-tbx__helper--error">${errorValue}</span>` : '';
+  const inputAttrs = ((isFilled || isReadOnly) ? ' value="..."' : '') + (isDisabled ? ' disabled' : '') + (isReadOnly ? ' readonly' : '');
+
+  const code = `${metaBlock}<div class="${boxCls}">
+  <div class="bt-input__field">
+    <input class="bt-input__text" type="text" placeholder="Placeholder Text"${inputAttrs} />
+  </div>${valBlock}${clearBlock}
+</div>${hintBlock}${errorBlock}`;
+
+  return `<pre class="code-block">&lt;div class="${_tbxEsc(outerCls)}"&gt;\n${_tbxEsc(code)}\n&lt;/div&gt;</pre>`;
+}
+
+function tbxBaseCss(state, props = {}) {
+  const { size = 'sm' } = props;
+  const lines = [];
+  const p = (k, v) => `  ${k}: ${v};`;
+  const isError   = state === 'error' || state === 'error-focused';
+  const isFocused = state === 'focused' || state === 'active' || state === 'error-focused';
+  const label = state.charAt(0).toUpperCase() + state.slice(1).replace('-', ' ');
+
+  lines.push(`/* TextBox (.bt-input çekirdeği) · ${label}${size !== 'sm' ? ' · ' + size.toUpperCase() : ''} */`);
+  lines.push('');
+  lines.push('.bt-input {');
+  lines.push(p('height', size === 'lg' ? '36px' : size === 'md' ? '32px' : '28px'));
+  lines.push(p('border-radius', 'var(--bt-radius-sm)  /* 4px */'));
+  lines.push(p('background',
+    (state === 'disabled' || state === 'readonly')
+      ? 'var(--bt-base-subtle)  /* #f5f5f5 */'
+      : 'var(--bt-base-default)  /* #ffffff */'));
+  lines.push(p('border', `1px solid ${
+    isError
+      ? 'var(--bt-border-error-default)  /* #b31d38 */'
+      : (state === 'hover' || state === 'focused' || state === 'active')
+        ? 'var(--bt-border-brand-default)  /* #0d4e97 */'
+        : 'var(--bt-border-primary-default)  /* #d4d4d4 */'
+  }`));
+  if (isFocused) lines.push(p('box-shadow',
+    isError ? '0 0 0 3px rgba(232,75,91,0.25)' : '0 0 0 3px rgba(13,78,151,0.25)'));
+  lines.push('}');
+
+  lines.push('');
+  lines.push(`.bt-tbx__box.bt-input--${size} .bt-input__field {`);
+  lines.push(p('padding', size === 'lg'
+    ? 'var(--bt-space-lg) var(--bt-space-xs) var(--bt-space-lg) var(--bt-space-md)  /* 10px 4px 10px 8px */'
+    : size === 'md'
+      ? 'var(--bt-space-md) var(--bt-space-xs) var(--bt-space-md) var(--bt-space-md)  /* 8px 4px 8px 8px */'
+      : 'var(--bt-space-sm) var(--bt-space-xs) var(--bt-space-sm) var(--bt-space-md)  /* 6px 4px 6px 8px */'));
+  lines.push('}');
+
+  if (isError) {
+    lines.push('');
+    lines.push('.bt-tbx__label {');
+    lines.push(p('color', 'var(--bt-text-error-default)  /* #b31d38 */'));
+    lines.push('}');
+  }
+
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<pre class="code-block" style="margin:0;border-radius:0;border:none;min-height:100%;">${esc(lines.join('\n'))}</pre>`;
+}
+
 PAGES_WEB['components/textbox'] = {
   tabs: ['Overview', 'Examples', 'CSS Properties', 'Usage'],
-  toc:  ['Anatomy', 'States', 'Sizes'],
+  toc:  ['Anatomy', 'Sizes', 'States'],
   render(tab) {
     const title = 'TextBox';
     const tk = v => `<code style="font-size:12px;font-family:var(--mono)">${v}</code>`;
 
+    // Figma'nın gerçek TextBox property'leri: showLabelText/labelValue,
+    // showHintText/hintValue, showErrorText/errorValue — üçü de bağımsız
+    // toggle+editable text çiftleri. "Required" YOK (bkz. tbxBasePreview
+    // üstündeki not) — eski implementasyondan kalma, kaldırıldı.
     const sharedProps = [
-      { key: 'size',     label: 'Size',     options: TBX_SIZE_OPTS, default: 'md'  },
-      { key: 'label',    label: 'Label',    options: TBX_BOOL_OPTS, default: 'on' },
-      { key: 'required', label: 'Required', options: TBX_BOOL_OPTS, default: 'on' },
-      { key: 'helper',   label: 'Helper',   options: TBX_BOOL_OPTS, default: 'on' },
+      { key: 'size',       label: 'Size',       options: TBX_BASE_SIZE_OPTS, default: 'sm' },
+      { key: 'label',      label: 'Show Label', options: TBX_BOOL_OPTS,      default: 'on' },
+      { key: 'labelValue', label: 'Label Text', type: 'text',                default: 'Label Text' },
+      { key: 'hint',       label: 'Show Hint',  options: TBX_BOOL_OPTS,      default: 'on' },
+      { key: 'hintValue',  label: 'Hint Text',  type: 'text',                default: 'Hint Text' },
+      { key: 'error',      label: 'Show Error', options: TBX_BOOL_OPTS,      default: 'off' },
+      { key: 'errorValue', label: 'Error Text', type: 'text',                default: 'Error Text' },
     ];
 
     if (tab === 'Examples') return { title, html: `
       <p class="page-desc">Tüm state'ler interaktif playground üzerinde — boyutu ve label görünürlüğünü değiştirin.</p>
       ${registerPlayground({
         id: 'pgd-tbx-ex',
+        variantLabel: 'State',
         variants: TBX_STATE_VARIANTS,
         props: sharedProps,
-        preview: (state, p) => tbxPreview(state, p),
-        code:    (state, p) => tbxCode(state, p),
-        css:     (state, p) => tbxCss(state, p),
+        preview: (state, p) => tbxBasePreview(state, p),
+        code:    (state, p) => tbxBaseCode(state, p),
+        css:     (state, p) => tbxBaseCss(state, p),
       })}
     `};
 
     if (tab === 'CSS Properties') return { title, html: `
-      <p class="page-desc">TextBox için kullanılan design token–CSS değişken eşleşmeleri.</p>
+      <p class="page-desc">TextBox için kullanılan design token–CSS değişken eşleşmeleri. Görsel shell (border/bg/radius/height) ${tk('.bt-input')} çekirdek class'ında tanımlıdır — TextBox onu ${tk('.bt-tbx__box')} kimlik class'ıyla aynı elementte kompoze eder (bkz. SearchBox).</p>
       <h2>Sizes</h2>
       <table class="token-table">
-        <thead><tr><th>Size</th><th>Height</th><th>Control padding</th><th>Field padding</th></tr></thead>
+        <thead><tr><th>Size</th><th>Height</th><th>Field padding (dikey)</th><th>Field padding (sol / sağ)</th></tr></thead>
         <tbody>
-          <tr><td><span class="token-name">Sm</span></td><td>28px</td><td>${tk('--bt-space-2xs')} (2px)</td><td>${tk('--bt-space-xs')} top/bot · ${tk('--bt-space-xl')} left · ${tk('--bt-space-xs')} right</td></tr>
-          <tr><td><span class="token-name">Md</span></td><td>32px</td><td>${tk('--bt-space-xs')} (4px)</td><td>${tk('--bt-space-sm')} top/bot · ${tk('--bt-space-xl')} left · ${tk('--bt-space-xs')} right</td></tr>
-          <tr><td><span class="token-name">Lg</span></td><td>36px</td><td>${tk('--bt-space-sm')} (6px)</td><td>${tk('--bt-space-md')} top/bot · ${tk('--bt-space-xl')} left · ${tk('--bt-space-xs')} right</td></tr>
+          <tr><td><span class="token-name">Sm</span></td><td>28px</td><td>${tk('--bt-space-sm')} (6px)</td><td>${tk('--bt-space-md')} (8px) / ${tk('--bt-space-xs')} (4px)</td></tr>
+          <tr><td><span class="token-name">Md</span></td><td>32px</td><td>${tk('--bt-space-md')} (8px)</td><td>${tk('--bt-space-md')} (8px) / ${tk('--bt-space-xs')} (4px)</td></tr>
+          <tr><td><span class="token-name">Lg</span></td><td>36px</td><td>${tk('--bt-space-lg')} (10px)</td><td>${tk('--bt-space-md')} (8px) / ${tk('--bt-space-xs')} (4px)</td></tr>
         </tbody>
       </table>
+      <p class="page-desc">Sol padding tüm boyutlarda sabit 8px'tir (SearchBox'tan farklı — TextBox'ta leading ikon yok, bu yüzden boyuta göre skalalanmaz).</p>
       <h2>State Tokens</h2>
       <table class="token-table">
         <thead><tr><th>State</th><th>Property</th><th>Token</th><th>Value</th></tr></thead>
         <tbody>
           <tr><td>Default</td><td>border</td><td>${tk('--bt-border-primary-default')}</td><td>#d4d4d4</td></tr>
           <tr><td>Hover</td><td>border</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
-          <tr><td rowspan="2">Focused / Active</td><td>border</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
+          <tr><td rowspan="2">Focused</td><td>border</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
           <tr><td>box-shadow</td><td colspan="2">0 0 0 3px rgba(13,78,151,0.25)</td></tr>
-          <tr><td rowspan="2">Disabled</td><td>background</td><td>${tk('--bt-surface-primary-subtle')}</td><td>#f5f5f5</td></tr>
-          <tr><td>border</td><td>${tk('--bt-border-primary-default')}</td><td>#d4d4d4</td></tr>
-          <tr><td rowspan="2">Read Only</td><td>background</td><td>${tk('--bt-surface-primary-subtle')}</td><td>#f5f5f5</td></tr>
-          <tr><td>border</td><td>${tk('--bt-border-primary-default')}</td><td>#d4d4d4</td></tr>
+          <tr><td rowspan="2">Active</td><td>border</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
+          <tr><td>box-shadow</td><td colspan="2">0 0 0 3px rgba(13,78,151,0.25)</td></tr>
+          <tr><td>Disabled</td><td>background</td><td>${tk('--bt-base-subtle')}</td><td>#f5f5f5</td></tr>
+          <tr><td rowspan="2">Read Only</td><td>background</td><td>${tk('--bt-base-subtle')}</td><td>#f5f5f5</td></tr>
+          <tr><td>value metin rengi</td><td>${tk('--bt-text-primary-default')}</td><td>#1a1a1a (Disabled'dan farklı — muted DEĞİL)</td></tr>
           <tr><td rowspan="2">Error</td><td>border</td><td>${tk('--bt-border-error-default')}</td><td>#b31d38</td></tr>
-          <tr><td>label / required</td><td>${tk('--bt-text-error-default')}</td><td>#b31d38</td></tr>
+          <tr><td>label / required / error text</td><td>${tk('--bt-text-error-default')}</td><td>#b31d38</td></tr>
           <tr><td rowspan="2">Error Focused</td><td>border</td><td>${tk('--bt-border-error-default')}</td><td>#b31d38</td></tr>
           <tr><td>box-shadow</td><td colspan="2">0 0 0 3px rgba(232,75,91,0.25)</td></tr>
         </tbody>
@@ -4061,32 +4385,36 @@ PAGES_WEB['components/textbox'] = {
         <thead><tr><th>Property</th><th>Token</th><th>Value</th></tr></thead>
         <tbody>
           <tr><td>border-radius</td><td>${tk('--bt-radius-sm')}</td><td>4px</td></tr>
-          <tr><td>background (Default/Hover/Focused/Error)</td><td>${tk('--bt-surface-primary-default')}</td><td>#ffffff</td></tr>
+          <tr><td>background (Default/Hover/Focused/Active/Error)</td><td>${tk('--bt-base-default')}</td><td>#ffffff</td></tr>
           <tr><td>Placeholder rengi</td><td>${tk('--bt-text-primary-muted')}</td><td>#a3a3a3</td></tr>
           <tr><td>Değer metin rengi</td><td>${tk('--bt-text-primary-default')}</td><td>#1a1a1a</td></tr>
           <tr><td>Label rengi</td><td>${tk('--bt-text-primary-default')}</td><td>#1a1a1a</td></tr>
           <tr><td>Required field rengi</td><td>${tk('--bt-text-primary-emphasis')}</td><td>#727272</td></tr>
-          <tr><td>Helper text rengi</td><td>${tk('--bt-text-primary-default')}</td><td>#1a1a1a</td></tr>
+          <tr><td>Hint text rengi</td><td>${tk('--bt-text-primary-emphasis')}</td><td>#727272</td></tr>
+          <tr><td>Error text rengi</td><td>${tk('--bt-text-error-default')}</td><td>#b31d38</td></tr>
           <tr><td>font</td><td>${tk('--bt-text-xs-regular')}</td><td>400 · 12px / 16px</td></tr>
-          <tr><td>Control kutusu</td><td>—</td><td>24 × 24px (validation ikon 15×15, clear ikon 10×10)</td></tr>
+          <tr><td>Validation ikonu (Error)</td><td>—</td><td>sabit 24×24, padding yok (Clear'dan farklı)</td></tr>
+          <tr><td>Clear ikonu (Filled)</td><td>—</td><td>sabit 28×28 (2px padding + 24×24 ikon)</td></tr>
         </tbody>
       </table>
       <h2>Class Reference</h2>
       <table class="token-table">
         <thead><tr><th>Class</th><th>Element</th><th>Açıklama</th></tr></thead>
         <tbody>
-          <tr><td>${tk('.bt-tbx')}</td><td>Wrapper</td><td>flex-col, gap 4px — state modifier'ları buraya eklenir</td></tr>
-          <tr><td>${tk('.bt-tbx--sm/md/lg')}</td><td>Wrapper</td><td>Input yüksekliği ve iç padding'i belirler</td></tr>
+          <tr><td>${tk('.bt-tbx')}</td><td>Dış wrapper</td><td>flex-col, gap 4px — Label/Input/Helper'ı dikey diziyor (paylaşılan, Select LookUp/Dropdown/MultiSelect/Date Picker/Textarea ile ortak)</td></tr>
+          <tr><td>${tk('.bt-input')}</td><td>Çekirdek — Input kutusu</td><td>Base Input shell'i — border/radius/bg/height/state renkleri burada (bkz. styles.css "BASE INPUT")</td></tr>
+          <tr><td>${tk('.bt-tbx__box')}</td><td>Input kutusu</td><td>TextBox kimliği — aynı elementte ${tk('.bt-input')} ile birlikte kullanılır; field padding override'ı burada scoped</td></tr>
+          <tr><td>${tk('.bt-input--sm/md/lg')}</td><td>Input kutusu</td><td>Yükseklik belirler</td></tr>
+          <tr><td>${tk('.bt-input--readonly')} / ${tk('--error')} / ${tk('--error-focused')}</td><td>Input kutusu</td><td>TextBox ile eklenen genel .bt-input state'leri — ileride başka component'ler de kullanabilir</td></tr>
           <tr><td>${tk('.bt-tbx__meta')}</td><td>Label satırı</td><td>flex row, gap 4px</td></tr>
-          <tr><td>${tk('.bt-tbx__label')}</td><td>Label metni</td><td>color: --bt-text-primary-default (error: --bt-text-error-default)</td></tr>
-          <tr><td>${tk('.bt-tbx__required')}</td><td>Zorunluk işareti</td><td>color: --bt-text-primary-emphasis (error: --bt-text-error-default)</td></tr>
-          <tr><td>${tk('.bt-tbx__input')}</td><td>Input kutusu</td><td>border, radius, bg — tüm state border/shadow değişimleri burada</td></tr>
-          <tr><td>${tk('.bt-tbx__field')}</td><td>Metin bölgesi</td><td>flex:1, sol padding 12px (--bt-space-xl)</td></tr>
-          <tr><td>${tk('.bt-tbx__text')}</td><td>&lt;input&gt;</td><td>Gerçek HTML input elemanı</td></tr>
-          <tr><td>${tk('.bt-tbx__control')}</td><td>İkon sarmalayıcı</td><td>Validation veya clear ikon için</td></tr>
-          <tr><td>${tk('.bt-tbx__icon')}</td><td>24×24 ikon alanı</td><td>color: muted (error: --bt-text-error-default)</td></tr>
-          <tr><td>${tk('.bt-tbx__clear')}</td><td>Temizle butonu</td><td>Filled state'te gösterilir; × ikonu, hover'da koyu</td></tr>
-          <tr><td>${tk('.bt-tbx__helper')}</td><td>Yardım metni</td><td>color: --bt-text-primary-default</td></tr>
+          <tr><td>${tk('.bt-tbx__label')}</td><td>Label metni</td><td>color: --bt-text-primary-default (error: --bt-text-error-default, .bt-tbx--error üzerinden — Figma'nın showLabelText/labelValue property'sine karşılık gelir)</td></tr>
+          <tr><td>${tk('.bt-input__field')}</td><td>Metin bölgesi</td><td>flex:1 — padding ${tk('.bt-tbx__box')} scope'unda override edilir (sol sabit 8px)</td></tr>
+          <tr><td>${tk('.bt-input__text')}</td><td>&lt;input&gt;</td><td>Gerçek HTML input elemanı</td></tr>
+          <tr><td>${tk('.bt-input__control--validation')}</td><td>İkon sarmalayıcı</td><td>Error/Error Focused'da circle-alert ikonu — padding yok, sabit 24×24</td></tr>
+          <tr><td>${tk('.bt-input__control--fixed.bt-input__control--clear')}</td><td>İkon sarmalayıcı</td><td>Filled'da × ikonu — SearchBox'la AYNI class'lar (Figma'da da aynı "Input Clear Button" component'i reuse ediliyor)</td></tr>
+          <tr><td>${tk('.bt-icon')}</td><td>İkon</td><td>Global 24×24 ikon sarmalayıcı</td></tr>
+          <tr><td>${tk('.bt-tbx__helper')}</td><td>Hint metni</td><td>color: --bt-text-primary-emphasis — Figma'nın showHintText/hintValue property'sine karşılık gelir, State'ten BAĞIMSIZ</td></tr>
+          <tr><td>${tk('.bt-tbx__helper--error')}</td><td>Error metni</td><td>color: --bt-text-error-default — Figma'nın showErrorText/errorValue property'sine karşılık gelir, Hint ile birlikte de gösterilebilir (Figma'da ikisi de bağımsız boolean)</td></tr>
         </tbody>
       </table>
     `};
@@ -4102,15 +4430,14 @@ PAGES_WEB['components/textbox'] = {
       <h2>Do</h2>
       <ul>
         <li>Her zaman anlamlı bir <code style="font-family:var(--mono)">placeholder</code> metni ekle</li>
-        <li>Zorunlu alanları <code style="font-family:var(--mono)">.bt-tbx__required</code> ile işaretle</li>
-        <li>Hata mesajını helper text olarak göster, error state ile birlikte kullan</li>
+        <li>Hata mesajını Error Text (Show Error) ile göster, State'i de Error/Error Focused yap — ikisi Figma'da bağımsız olsa da gerçek kullanımda birlikte ayarlanır</li>
         <li>Düzenleme yoksa Disabled yerine Read Only kullan — okuma hakkı varsa</li>
       </ul>
       <h2>Don't</h2>
       <ul>
         <li>Label'sız TextBox bırakma — erişilebilirlik için label zorunlu</li>
         <li>Çok satırlı metin için TextBox kullanma — bunun yerine Textarea kullan</li>
-        <li>Error state'te yalnızca border'ı kırmızı yapma — label ve required field da dönmeli</li>
+        <li>Error state'te yalnızca border'ı kırmızı yapma — label da dönmeli</li>
       </ul>
     `};
 
@@ -4118,14 +4445,15 @@ PAGES_WEB['components/textbox'] = {
     return { title, html: `
       ${registerPlayground({
         id: 'pgd-tbx-overview',
+        variantLabel: 'State',
         variants: TBX_STATE_VARIANTS,
         props: sharedProps,
-        preview: (state, p) => tbxPreview(state, p),
-        code:    (state, p) => tbxCode(state, p),
-        css:     (state, p) => tbxCss(state, p),
+        preview: (state, p) => tbxBasePreview(state, p),
+        code:    (state, p) => tbxBaseCode(state, p),
+        css:     (state, p) => tbxBaseCss(state, p),
       })}
 
-      <p class="page-desc">Tek satırlık metin giriş bileşeni. Label, Required Field ve Helper Text ile birleşik yapı; 3 boyut (Sm/Md/Lg) ve 9 state sunar.</p>
+      <p class="page-desc">Tek satırlık metin giriş bileşeni. Label, Hint Text ve Error Text ile birleşik yapı — üçü de bağımsız gösterilebilir/gizlenebilir ve düzenlenebilir; 3 boyut (Sm/Md/Lg, varsayılan Sm) ve 9 state sunar.</p>
 
       <h2 id="Anatomy">Anatomy</h2>
       <table class="token-table" style="margin-bottom:40px;">
@@ -4139,30 +4467,27 @@ PAGES_WEB['components/textbox'] = {
           <tr><td>Lg</td><td>Height</td><td>—</td><td>36px</td></tr>
           <tr><td rowspan="2">Label</td><td>Font / size</td><td>${tk('Font/Family/Label · Font/Size/text-xs')}</td><td>Geist 12px</td></tr>
           <tr><td>Color</td><td>${tk('Text/Primary/--bt-text-primary-default')}</td><td>#1a1a1a</td></tr>
-          <tr><td>Required field</td><td>Color</td><td>${tk('Text/Primary/--bt-text-primary-emphasis')}</td><td>#727272</td></tr>
+          <tr><td>Hint Text</td><td>Color</td><td>${tk('Text/Primary/--bt-text-primary-emphasis')}</td><td>#727272</td></tr>
+          <tr><td>Error Text</td><td>Color</td><td>${tk('Text/Error/--bt-text-error-default')}</td><td>#b31d38</td></tr>
           <tr><td>Placeholder</td><td>Color</td><td>${tk('Text/Primary/--bt-text-primary-muted')}</td><td>#a3a3a3</td></tr>
           <tr><td>Focus ring</td><td>box-shadow</td><td>${tk('Focus Ring/primary')}</td><td>0 0 0 3px rgba(13,78,151,0.25)</td></tr>
           <tr><td>Error focus ring</td><td>box-shadow</td><td>—</td><td>0 0 0 3px rgba(232,75,91,0.25)</td></tr>
         </tbody>
       </table>
 
-      <h2 id="States">States</h2>
+      <h2 id="Sizes">Sizes</h2>
       <table class="token-table" style="margin-bottom:40px;">
-        <thead><tr><th>State</th><th>Preview (Sm)</th></tr></thead>
+        <thead><tr><th>Size</th><th>Preview</th></tr></thead>
         <tbody>
-          ${TBX_STATE_VARIANTS.map(s => `
+          ${TBX_BASE_SIZE_OPTS.map(sz => `
           <tr>
-            <td><span class="token-name">${s.label}</span></td>
+            <td><span class="token-name">${sz.label}</span></td>
             <td style="padding:6px 0;">
               <div style="max-width:280px;">
-                <div class="${_tbxCls(s.key, 'sm')}">
-                  <div class="bt-tbx__meta"><span class="bt-tbx__label">Label Text</span><span class="bt-tbx__required">Required Field</span></div>
-                  <div class="bt-tbx__input">
-                    <div class="bt-tbx__field"><input class="bt-tbx__text" type="text" placeholder="Placeholder Text"${(s.key === 'filled' || s.key === 'readonly') ? ' value="Placeholder Text"' : ''}${s.key === 'disabled' ? ' disabled' : ''}${s.key === 'readonly' ? ' readonly' : ''} /></div>
-                    ${(s.key === 'error' || s.key === 'error-focused') ? `<div class="bt-tbx__control"><span class="bt-tbx__icon">${_tbxIconValidation}</span></div>` : ''}
-                    ${s.key === 'filled' ? `<div class="bt-tbx__control"><button class="bt-tbx__clear">${_tbxIconClear}</button></div>` : ''}
-                  </div>
-                  <span class="bt-tbx__helper">Helper Text</span>
+                <div class="bt-tbx bt-tbx--${sz.key}">
+                  <div class="bt-tbx__meta"><span class="bt-tbx__label">Label Text</span></div>
+                  <div class="${_tbxBaseCls('default', sz.key)}">${_tbxBaseInner('default')}</div>
+                  <span class="bt-tbx__helper">Hint Text</span>
                 </div>
               </div>
             </td>
@@ -4170,25 +4495,25 @@ PAGES_WEB['components/textbox'] = {
         </tbody>
       </table>
 
-      <h2 id="Sizes">Sizes</h2>
+      <h2 id="States">States</h2>
       <table class="token-table">
-        <thead><tr><th>Size</th><th>Preview</th></tr></thead>
+        <thead><tr><th>State</th><th>Preview (Sm)</th></tr></thead>
         <tbody>
-          ${TBX_SIZE_OPTS.map(sz => `
+          ${TBX_STATE_VARIANTS.map(s => {
+            const isError = s.key === 'error' || s.key === 'error-focused';
+            return `
           <tr>
-            <td><span class="token-name">${sz.label}</span></td>
+            <td><span class="token-name">${s.label}</span></td>
             <td style="padding:6px 0;">
               <div style="max-width:280px;">
-                <div class="bt-tbx bt-tbx--${sz.key}">
+                <div class="bt-tbx bt-tbx--sm${isError ? ' bt-tbx--error' : ''}">
                   <div class="bt-tbx__meta"><span class="bt-tbx__label">Label Text</span></div>
-                  <div class="bt-tbx__input">
-                    <div class="bt-tbx__field"><input class="bt-tbx__text" type="text" placeholder="Placeholder Text" /></div>
-                  </div>
-                  <span class="bt-tbx__helper">Helper Text</span>
+                  <div class="${_tbxBaseCls(s.key, 'sm')}">${_tbxBaseInner(s.key)}</div>
+                  <span class="bt-tbx__helper${isError ? ' bt-tbx__helper--error' : ''}">${isError ? 'Error Text' : 'Hint Text'}</span>
                 </div>
               </div>
             </td>
-          </tr>`).join('')}
+          </tr>`;}).join('')}
         </tbody>
       </table>
     `};
@@ -4516,58 +4841,225 @@ function ddCode(state, props = {}) {
   return `<pre class="code-block">&lt;div class="${esc(cls)}"&gt;\n${esc(code)}\n&lt;/div&gt;</pre>`;
 }
 
+// ── Dropdown (Base Input) ────────────────────────────────────────
+// SearchBox/TextBox'ın .bt-input çekirdeğinin üzerine kurulu — sadece
+// Dropdown'ın KENDİ sayfası bunu kullanır. _ddInputInner/_ddIconChevron*/
+// btDdToggle/_ddOptionsHtml/_tbxCls (yukarıda) Dialog örneği ve Data Table
+// Grid inline dropdown hücresi tarafından reuse edildiği için DOKUNULMADI.
+const ddBaseIconChevronDown = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
+const ddBaseIconChevronUp   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>`;
+
+function _ddBaseCls(state, size) {
+  const parts = ['bt-input', 'bt-dd__box', `bt-input--${size}`];
+  if (state === 'error-focused') {
+    parts.push('bt-input--error', 'bt-input--error-focused');
+  } else if (state !== 'default' && state !== 'filled') {
+    parts.push(`bt-input--${state}`);
+  }
+  return parts.join(' ');
+}
+
+// Value her zaman bir <span> — Dropdown gerçek metin girişi almıyor, seçim
+// yapıyor (TextBox'ın <input>'ından FARKLI). Active'in cursor mockup'ı
+// SearchBox/TextBox'takiyle aynı Figma sadakati (bkz. tbxBase*'in üstündeki not).
+function _ddBaseInner(state, opts = {}) {
+  const isError    = state === 'error' || state === 'error-focused';
+  const isFilled   = state === 'filled';
+  const isActive   = state === 'active';
+  const showValue  = isFilled || state === 'readonly' || isActive || isError;
+  const textColor  = showValue ? 'var(--bt-text-primary-default,#1a1a1a)' : 'var(--bt-text-primary-muted,#a3a3a3)';
+  const cursorHtml = isActive ? `<span style="display:inline-block;width:1px;height:16px;background:var(--bt-base-intense,#404040);flex-shrink:0;"></span>` : '';
+  const validationHtml = isError ? `<div class="bt-input__control bt-input__control--validation"><span class="bt-icon">${tbxBaseIconValidation}</span></div>` : '';
+  const clearHtml       = isFilled ? `<div class="bt-input__control bt-input__control--fixed bt-input__control--clear bt-input__control--clickable" onclick="ddBaseClear(this)"><span class="bt-icon">${sbxIconClear}</span></div>` : '';
+  const chevronIcon = opts.open ? ddBaseIconChevronUp : ddBaseIconChevronDown;
+  return `
+        <div class="bt-input__field"><span class="bt-input__text" style="color:${textColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Placeholder Text</span>${cursorHtml}</div>${validationHtml}${clearHtml}
+        <div class="bt-input__control bt-input__control--button"><span class="bt-icon">${chevronIcon}</span></div>`;
+}
+
+// Default state'in canlı tıkla-aç/kapa davranışı — btDdToggle'ın YENİ Base
+// Input mimarisine uyarlanmış kopyası (eskisi diğer reuse noktaları için
+// dokunulmadan kalıyor). .bt-input--active zaten .bt-input çekirdeğinde
+// gerçek border+ring kuralına sahip — ayrı bir "açık" class'ı icat etmiyoruz.
+window.ddBaseToggle = function(boxEl) {
+  const anchor = boxEl.closest('.bt-tbx__anchor');
+  const isOpen = boxEl.classList.toggle('bt-input--active');
+  const opts = anchor ? anchor.querySelector('.bt-dd-options') : null;
+  if (opts) opts.style.display = isOpen ? '' : 'none';
+  const iconSpan = boxEl.querySelector('.bt-input__control:last-child .bt-icon');
+  if (iconSpan) iconSpan.innerHTML = isOpen ? ddBaseIconChevronUp : ddBaseIconChevronDown;
+};
+// SearchBox/TextBox'taki AYNI standart (design.md §22.6): Clear tıklanınca
+// değeri gerçekten temizler, kendini kaldırır. Value bir <span> olduğu için
+// "temizlemek" placeholder görünümüne (muted renk) dönmek anlamına gelir.
+function ddBaseClear(el) {
+  const box = el.closest('.bt-input');
+  const valueSpan = box.querySelector('.bt-input__text');
+  if (valueSpan) {
+    valueSpan.textContent = 'Placeholder Text';
+    valueSpan.style.color = 'var(--bt-text-primary-muted,#a3a3a3)';
+  }
+  el.remove();
+}
+
+function ddBasePreview(state, props = {}) {
+  const { size = 'md', label = 'on', labelValue = 'Label Text', hint = 'on', hintValue = 'Hint Text', error = 'off', errorValue = 'Error Text' } = props;
+  const isError   = state === 'error' || state === 'error-focused';
+  const isDefault = state === 'default';
+  const metaHtml  = label === 'on' ? `<div class="bt-tbx__meta"><span class="bt-tbx__label">${_tbxEsc(labelValue)}</span></div>` : '';
+  const hintHtml  = hint  === 'on' ? `<span class="bt-tbx__helper">${_tbxEsc(hintValue)}</span>` : '';
+  const errorHtml = error === 'on' ? `<span class="bt-tbx__helper bt-tbx__helper--error">${_tbxEsc(errorValue)}</span>` : '';
+  const outerCls  = `bt-tbx bt-tbx--${size}${isError ? ' bt-tbx--error' : ''}`;
+  // Options paneli sadece Default'ta gerçekten tıklanabilir (kapalı başlar).
+  const optionsHtml = isDefault ? `<div class="bt-dd-options" style="display:none;">${_ddOptionsHtml}</div>` : '';
+  const boxAttrs = isDefault ? ` onclick="ddBaseToggle(this)" style="cursor:pointer;"` : '';
+  return `
+    <div style="padding:24px;width:100%;max-width:420px;margin:0 auto;box-sizing:border-box;">
+      <div class="${outerCls}">
+        ${metaHtml}
+        <div class="bt-tbx__anchor">
+          <div class="${_ddBaseCls(state, size)}"${boxAttrs}>${_ddBaseInner(state)}</div>
+          ${optionsHtml}
+        </div>
+        ${hintHtml}${errorHtml}
+      </div>
+    </div>`;
+}
+
+function ddBaseCode(state, props = {}) {
+  const { size = 'md', label = 'on', labelValue = 'Label Text', hint = 'on', hintValue = 'Hint Text', error = 'off', errorValue = 'Error Text' } = props;
+  const isError  = state === 'error' || state === 'error-focused';
+  const isFilled = state === 'filled';
+  const isActive = state === 'active';
+  const outerCls = `bt-tbx bt-tbx--${size}${isError ? ' bt-tbx--error' : ''}`;
+  const boxCls   = _ddBaseCls(state, size);
+
+  const metaBlock    = label === 'on' ? `<div class="bt-tbx__meta">\n  <span class="bt-tbx__label">${labelValue}</span>\n</div>\n` : '';
+  const valBlock     = isError  ? `\n  <div class="bt-input__control bt-input__control--validation">\n    <!-- Lucide circle-alert -->\n  </div>` : '';
+  const clearBlock   = isFilled ? `\n  <div class="bt-input__control bt-input__control--fixed bt-input__control--clear bt-input__control--clickable">\n    <!-- Input Clear Button — Lucide x -->\n  </div>` : '';
+  const optionsBlock = isActive ? `\n<div class="bt-dd-options">\n  <div class="bt-dd-option bt-dd-option--selected">\n    <span class="bt-dd-option__text">Option 1</span>\n  </div>\n  <div class="bt-dd-option">\n    <span class="bt-dd-option__text">Option 2</span>\n  </div>\n</div>` : '';
+  const hintBlock    = hint  === 'on' ? `\n<span class="bt-tbx__helper">${hintValue}</span>` : '';
+  const errorBlock   = error === 'on' ? `\n<span class="bt-tbx__helper bt-tbx__helper--error">${errorValue}</span>` : '';
+
+  const code = `${metaBlock}<div class="${boxCls}">
+  <div class="bt-input__field">
+    <span class="bt-input__text">Placeholder Text</span>
+  </div>${valBlock}${clearBlock}
+  <div class="bt-input__control bt-input__control--button">
+    <!-- Lucide ${isActive ? 'chevron-up' : 'chevron-down'} -->
+  </div>
+</div>${optionsBlock}${hintBlock}${errorBlock}`;
+
+  return `<pre class="code-block">&lt;div class="${_tbxEsc(outerCls)}"&gt;\n${_tbxEsc(code)}\n&lt;/div&gt;</pre>`;
+}
+
+function ddBaseCss(state, props = {}) {
+  const { size = 'md' } = props;
+  const lines = [];
+  const p = (k, v) => `  ${k}: ${v};`;
+  const isError   = state === 'error' || state === 'error-focused';
+  const isFocused = state === 'focused' || state === 'active' || state === 'error-focused';
+  const label = state.charAt(0).toUpperCase() + state.slice(1).replace('-', ' ');
+
+  lines.push(`/* Dropdown (.bt-input çekirdeği) · ${label}${size !== 'md' ? ' · ' + size.toUpperCase() : ''} */`);
+  lines.push('');
+  lines.push('.bt-input {');
+  lines.push(p('height', size === 'lg' ? '36px' : size === 'sm' ? '28px' : '32px'));
+  lines.push(p('border-radius', 'var(--bt-radius-sm)  /* 4px */'));
+  lines.push(p('background',
+    (state === 'disabled' || state === 'readonly')
+      ? 'var(--bt-base-subtle)  /* #f5f5f5 */'
+      : 'var(--bt-base-default)  /* #ffffff */'));
+  lines.push(p('border', `1px solid ${
+    isError
+      ? 'var(--bt-border-error-default)  /* #b31d38 */'
+      : (state === 'hover' || state === 'focused' || state === 'active')
+        ? 'var(--bt-border-brand-default)  /* #0d4e97 */'
+        : 'var(--bt-border-primary-default)  /* #d4d4d4 */'
+  }`));
+  if (isFocused) lines.push(p('box-shadow',
+    isError ? '0 0 0 3px rgba(232,75,91,0.25)' : '0 0 0 3px rgba(13,78,151,0.25)'));
+  lines.push('}');
+
+  lines.push('');
+  lines.push(`.bt-dd__box.bt-input--${size} .bt-input__field {`);
+  lines.push(p('padding', size === 'lg'
+    ? 'var(--bt-space-lg) var(--bt-space-xs) var(--bt-space-lg) var(--bt-space-md)  /* 10px 4px 10px 8px */'
+    : size === 'sm'
+      ? 'var(--bt-space-sm) var(--bt-space-xs) var(--bt-space-sm) var(--bt-space-md)  /* 6px 4px 6px 8px */'
+      : 'var(--bt-space-md) var(--bt-space-xs) var(--bt-space-md) var(--bt-space-md)  /* 8px 4px 8px 8px */'));
+  lines.push('}');
+
+  if (isError) {
+    lines.push('');
+    lines.push('.bt-tbx__label {');
+    lines.push(p('color', 'var(--bt-text-error-default)  /* #b31d38 */'));
+    lines.push('}');
+  }
+
+  return `<pre class="code-block" style="margin:0;border-radius:0;border:none;min-height:100%;">${_tbxEsc(lines.join('\n'))}</pre>`;
+}
+
 PAGES_WEB['components/dropdown'] = {
   tabs: ['Overview', 'Examples', 'CSS Properties', 'Usage'],
-  toc:  ['Anatomy', 'States', 'Sizes'],
+  toc:  ['Anatomy', 'Sizes', 'States'],
   render(tab) {
     const title = 'Dropdown';
     const tk = v => `<code style="font-size:12px;font-family:var(--mono)">${v}</code>`;
 
+    // Figma'nın gerçek Dropdown property'leri TextBox'la birebir aynı model:
+    // showLabelText/labelValue, showHintText/hintValue, showErrorText/errorValue
+    // — üçü bağımsız toggle+editable text. "Required" YOK. size varsayılanı
+    // gerçekten Md (Figma "Size=md (default)" diye işaretlemiş).
     const sharedProps = [
-      { key: 'size',     label: 'Size',     options: TBX_SIZE_OPTS, default: 'md'  },
-      { key: 'label',    label: 'Label',    options: TBX_BOOL_OPTS, default: 'on' },
-      { key: 'required', label: 'Required', options: TBX_BOOL_OPTS, default: 'on' },
-      { key: 'helper',   label: 'Helper',   options: TBX_BOOL_OPTS, default: 'on' },
+      { key: 'size',       label: 'Size',       options: TBX_SIZE_OPTS, default: 'md' },
+      { key: 'label',      label: 'Show Label', options: TBX_BOOL_OPTS, default: 'on' },
+      { key: 'labelValue', label: 'Label Text', type: 'text',           default: 'Label Text' },
+      { key: 'hint',       label: 'Show Hint',  options: TBX_BOOL_OPTS, default: 'on' },
+      { key: 'hintValue',  label: 'Hint Text',  type: 'text',           default: 'Hint Text' },
+      { key: 'error',      label: 'Show Error', options: TBX_BOOL_OPTS, default: 'off' },
+      { key: 'errorValue', label: 'Error Text', type: 'text',           default: 'Error Text' },
     ];
 
     if (tab === 'Examples') return { title, html: `
-      <p class="page-desc">Tüm state'ler interaktif playground üzerinde — boyutu ve label görünürlüğünü değiştirin.</p>
+      <p class="page-desc">Tüm state'ler interaktif playground üzerinde — Default state'te kutuya tıklayınca seçenek paneli gerçekten açılır/kapanır.</p>
       ${registerPlayground({
         id: 'pgd-dd-ex',
+        variantLabel: 'State',
         variants: TBX_STATE_VARIANTS,
         props: sharedProps,
-        preview: (state, p) => ddPreview(state, p),
-        code:    (state, p) => ddCode(state, p),
-        css:     (state, p) => tbxCss(state, p),
+        preview: (state, p) => ddBasePreview(state, p),
+        code:    (state, p) => ddBaseCode(state, p),
+        css:     (state, p) => ddBaseCss(state, p),
       })}
     `};
 
     if (tab === 'CSS Properties') return { title, html: `
-      <p class="page-desc">Dropdown için kullanılan design token–CSS değişken eşleşmeleri. ${tk('bt-tbx')} CSS'ini miras alır.</p>
+      <p class="page-desc">Dropdown için kullanılan design token–CSS değişken eşleşmeleri. Görsel shell ${tk('.bt-input')} çekirdek class'ında tanımlıdır — Dropdown onu ${tk('.bt-dd__box')} kimlik class'ıyla aynı elementte kompoze eder (bkz. SearchBox/TextBox).</p>
       <h2>Sizes</h2>
       <table class="token-table">
-        <thead><tr><th>Size</th><th>Height</th><th>Field padding</th><th>Control padding</th></tr></thead>
+        <thead><tr><th>Size</th><th>Height</th><th>Field padding (dikey)</th><th>Chevron control padding</th></tr></thead>
         <tbody>
-          <tr><td><span class="token-name">Sm</span></td><td>28px</td><td>${tk('--bt-space-xs')} top/bot · ${tk('--bt-space-xl')} left · ${tk('--bt-space-xs')} right</td><td>${tk('--bt-space-2xs')} (2px)</td></tr>
-          <tr><td><span class="token-name">Md</span></td><td>32px</td><td>${tk('--bt-space-sm')} top/bot · ${tk('--bt-space-xl')} left · ${tk('--bt-space-xs')} right</td><td>${tk('--bt-space-xs')} (4px)</td></tr>
-          <tr><td><span class="token-name">Lg</span></td><td>36px</td><td>${tk('--bt-space-md')} top/bot · ${tk('--bt-space-xl')} left · ${tk('--bt-space-xs')} right</td><td>${tk('--bt-space-sm')} (6px)</td></tr>
+          <tr><td><span class="token-name">Sm</span></td><td>28px</td><td>${tk('--bt-space-sm')} (6px)</td><td>${tk('--bt-space-2xs')} (2px)</td></tr>
+          <tr><td><span class="token-name">Md (Default)</span></td><td>32px</td><td>${tk('--bt-space-md')} (8px)</td><td>${tk('--bt-space-xs')} (4px)</td></tr>
+          <tr><td><span class="token-name">Lg</span></td><td>36px</td><td>${tk('--bt-space-lg')} (10px)</td><td>${tk('--bt-space-sm')} (6px)</td></tr>
         </tbody>
       </table>
+      <p class="page-desc">Field'ın sol padding'i tüm boyutlarda sabit ${tk('--bt-space-md')} (8px) — solda aktif bir control yok (control sağda, chevron); sağ padding sabit ${tk('--bt-space-xs')} (4px).</p>
       <h2>State Tokens</h2>
       <table class="token-table">
         <thead><tr><th>State</th><th>Property</th><th>Token</th><th>Value</th></tr></thead>
         <tbody>
           <tr><td>Default</td><td>border</td><td>${tk('--bt-border-primary-default')}</td><td>#d4d4d4</td></tr>
-          <tr><td>Hover</td><td>border</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
-          <tr><td>Hover / Focused</td><td>right control bg</td><td>${tk('--bt-surface-primary-subtle')}</td><td>#f5f5f5</td></tr>
+          <tr><td rowspan="2">Hover</td><td>border</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
+          <tr><td>chevron bg</td><td>${tk('--bt-base-subtle')}</td><td>#f5f5f5</td></tr>
           <tr><td rowspan="2">Focused / Active</td><td>border</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
           <tr><td>box-shadow</td><td colspan="2">0 0 0 3px rgba(13,78,151,0.25)</td></tr>
-          <tr><td rowspan="2">Disabled</td><td>background</td><td>${tk('--bt-surface-primary-subtle')}</td><td>#f5f5f5</td></tr>
-          <tr><td>border</td><td>${tk('--bt-border-primary-default')}</td><td>#d4d4d4</td></tr>
-          <tr><td rowspan="2">Read Only</td><td>background</td><td>${tk('--bt-surface-primary-subtle')}</td><td>#f5f5f5</td></tr>
-          <tr><td>border</td><td>${tk('--bt-border-primary-default')}</td><td>#d4d4d4</td></tr>
+          <tr><td>Disabled</td><td>background</td><td>${tk('--bt-base-subtle')}</td><td>#f5f5f5</td></tr>
+          <tr><td rowspan="2">Read Only</td><td>background</td><td>${tk('--bt-base-subtle')}</td><td>#f5f5f5</td></tr>
+          <tr><td>value metin rengi</td><td>${tk('--bt-text-primary-default')}</td><td>#1a1a1a (Disabled'dan farklı — muted DEĞİL)</td></tr>
           <tr><td rowspan="2">Error</td><td>border</td><td>${tk('--bt-border-error-default')}</td><td>#b31d38</td></tr>
-          <tr><td>label / required</td><td>${tk('--bt-text-error-default')}</td><td>#b31d38</td></tr>
+          <tr><td>label / error text</td><td>${tk('--bt-text-error-default')}</td><td>#b31d38</td></tr>
           <tr><td rowspan="2">Error Focused</td><td>border</td><td>${tk('--bt-border-error-default')}</td><td>#b31d38</td></tr>
           <tr><td>box-shadow</td><td colspan="2">0 0 0 3px rgba(232,75,91,0.25)</td></tr>
         </tbody>
@@ -4576,15 +5068,16 @@ PAGES_WEB['components/dropdown'] = {
       <table class="token-table">
         <thead><tr><th>Class</th><th>Element</th><th>Açıklama</th></tr></thead>
         <tbody>
-          <tr><td>${tk('.bt-tbx')}</td><td>Wrapper</td><td>TextBox CSS miras alır — state modifier'ları buraya eklenir</td></tr>
-          <tr><td>${tk('.bt-tbx--sm/md/lg')}</td><td>Wrapper</td><td>Input yüksekliği ve padding belirler</td></tr>
-          <tr><td>${tk('.bt-tbx__meta')}</td><td>Label satırı</td><td>Label ve Required Field sarmalayıcısı</td></tr>
-          <tr><td>${tk('.bt-tbx__input')}</td><td>Input kutusu</td><td>Border, radius, bg — tüm state değişimleri burada</td></tr>
-          <tr><td>${tk('.bt-tbx__field')}</td><td>Metin bölgesi</td><td>Seçili değer veya placeholder span'ını içerir</td></tr>
-          <tr><td>${tk('.bt-tbx__control')}</td><td>Ikon sarmalayıcı</td><td>Validation veya clear ikon için</td></tr>
-          <tr><td>${tk('.bt-tbx__control--right')}</td><td>Chevron sarmalayıcı</td><td>Her state'te sağda; hover/focused'da subtle bg alır</td></tr>
-          <tr><td>${tk('.bt-tbx__clear')}</td><td>Temizle butonu</td><td>Filled state'te gösterilir — seçimi sıfırlar</td></tr>
-          <tr><td>${tk('.bt-tbx__helper')}</td><td>Yardım metni</td><td>color: --bt-text-primary-default</td></tr>
+          <tr><td>${tk('.bt-tbx')}</td><td>Dış wrapper</td><td>flex-col, gap 4px — Label/Input/Helper'ı diziyor (paylaşılan)</td></tr>
+          <tr><td>${tk('.bt-input')}</td><td>Çekirdek — Input kutusu</td><td>Base Input shell'i — border/radius/bg/height/state renkleri (bkz. styles.css "BASE INPUT")</td></tr>
+          <tr><td>${tk('.bt-dd__box')}</td><td>Input kutusu</td><td>Dropdown kimliği — aynı elementte ${tk('.bt-input')} ile birlikte; field padding override'ı burada scoped</td></tr>
+          <tr><td>${tk('.bt-tbx__anchor')}</td><td>Konum sarmalayıcı</td><td>position:relative — ${tk('.bt-dd-options')} panelinin absolute konumlandığı yer (paylaşılan)</td></tr>
+          <tr><td>${tk('.bt-input__field')}</td><td>Metin bölgesi</td><td>Seçili değer veya placeholder ${tk('&lt;span&gt;')}'ını içerir (Dropdown gerçek ${tk('&lt;input&gt;')} kullanmaz)</td></tr>
+          <tr><td>${tk('.bt-input__control--validation')}</td><td>İkon sarmalayıcı</td><td>Error/Error Focused'da circle-alert — padding yok, sabit 24×24</td></tr>
+          <tr><td>${tk('.bt-input__control--fixed.bt-input__control--clear')}</td><td>İkon sarmalayıcı</td><td>Filled'da × ikonu — SearchBox/TextBox'la AYNI class'lar</td></tr>
+          <tr><td>${tk('.bt-input__control--button')}</td><td>Chevron sarmalayıcı</td><td>Content=Button (Figma "Input Button") — hover/focus/active'te ${tk('--bt-base-subtle')} arka plan dolgusu alır; Content=Icon'dan (SearchBox'ın arama ikonu gibi) farkı budur</td></tr>
+          <tr><td>${tk('.bt-tbx__helper')}</td><td>Hint metni</td><td>color: --bt-text-primary-emphasis</td></tr>
+          <tr><td>${tk('.bt-tbx__helper--error')}</td><td>Error metni</td><td>color: --bt-text-error-default — Hint ile birlikte de gösterilebilir</td></tr>
         </tbody>
       </table>
     `};
@@ -4600,9 +5093,8 @@ PAGES_WEB['components/dropdown'] = {
       <h2>Do</h2>
       <ul>
         <li>Anlamlı bir placeholder metni ekle (örn. "Seçin...")</li>
-        <li>Zorunlu alanları <code style="font-family:var(--mono)">.bt-tbx__required</code> ile işaretle</li>
         <li>Filled state'te clear butonu ile seçimi sıfırlama imkânı sun</li>
-        <li>Hata mesajını helper text ile birlikte göster</li>
+        <li>Hata mesajını Error Text (Show Error) ile göster, State'i de Error/Error Focused yap</li>
       </ul>
       <h2>Don't</h2>
       <ul>
@@ -4616,55 +5108,36 @@ PAGES_WEB['components/dropdown'] = {
     return { title, html: `
       ${registerPlayground({
         id: 'pgd-dd-overview',
+        variantLabel: 'State',
         variants: TBX_STATE_VARIANTS,
         props: sharedProps,
-        preview: (state, p) => ddPreview(state, p),
-        code:    (state, p) => ddCode(state, p),
-        css:     (state, p) => tbxCss(state, p),
+        preview: (state, p) => ddBasePreview(state, p),
+        code:    (state, p) => ddBaseCode(state, p),
+        css:     (state, p) => ddBaseCss(state, p),
       })}
 
-      <p class="page-desc">Listeden tek seçim yapılan dropdown bileşeni. <code style="font-family:var(--mono)">bt-tbx</code> CSS'ini miras alır; 3 boyut (Sm/Md/Lg) ve 9 state sunar.</p>
+      <p class="page-desc">Listeden tek seçim yapılan dropdown bileşeni, Base Input çekirdeğinin (${tk('.bt-input')}) üzerine kurulur. Label, Hint Text ve Error Text ile birleşik yapı — üçü de bağımsız gösterilebilir/gizlenebilir ve düzenlenebilir; 3 boyut (Sm/Md/Lg, varsayılan Md) ve 9 state sunar. Default state'te kutuya tıklayınca seçenek paneli gerçekten açılır, chevron down↔up döner.</p>
 
       <h2 id="Anatomy">Anatomy</h2>
+      <p class="page-desc">Dropdown'ın görsel shell'i (border/bg/radius/height) ${tk('.bt-input')} çekirdek class'ından gelir — TextBox'la aynı, TEK fark sağda her zaman görünen chevron ${tk('.bt-input__control--button')}'ı (Figma "Input Button", hover'da arka plan dolgusu alır). Value her zaman bir ${tk('&lt;span&gt;')} — Dropdown gerçek metin girişi almıyor, seçim yapıyor.</p>
       <table class="token-table" style="margin-bottom:40px;">
         <thead><tr><th>Element</th><th>Property</th><th>Token</th><th>Value</th></tr></thead>
         <tbody>
           <tr><td rowspan="3">Input kutusu</td><td>Border (Default)</td><td>${tk('--bt-border-primary-default')}</td><td>#d4d4d4</td></tr>
           <tr><td>Border (Hover/Focused)</td><td>${tk('--bt-border-brand-default')}</td><td>#0d4e97</td></tr>
           <tr><td>Border radius</td><td>${tk('--bt-radius-sm')}</td><td>4px</td></tr>
-          <tr><td>Sm</td><td>Height</td><td>—</td><td>28px</td></tr>
-          <tr><td>Md</td><td>Height</td><td>—</td><td>32px</td></tr>
-          <tr><td>Lg</td><td>Height</td><td>—</td><td>36px</td></tr>
-          <tr><td>Chevron kontrol</td><td>bg (hover/focused)</td><td>${tk('--bt-surface-primary-subtle')}</td><td>#f5f5f5</td></tr>
+          <tr><td>Chevron kontrol</td><td>bg (hover/focused/açık)</td><td>${tk('--bt-base-subtle')}</td><td>#f5f5f5</td></tr>
           <tr><td>Placeholder</td><td>Color</td><td>${tk('--bt-text-primary-muted')}</td><td>#a3a3a3</td></tr>
           <tr><td>Seçili değer</td><td>Color</td><td>${tk('--bt-text-primary-default')}</td><td>#1a1a1a</td></tr>
+          <tr><td>Hint text</td><td>Color</td><td>${tk('--bt-text-primary-emphasis')}</td><td>#727272</td></tr>
+          <tr><td>Error text</td><td>Color</td><td>${tk('--bt-text-error-default')}</td><td>#b31d38</td></tr>
           <tr><td>Focus ring</td><td>box-shadow</td><td>—</td><td>0 0 0 3px rgba(13,78,151,0.25)</td></tr>
           <tr><td>Error focus ring</td><td>box-shadow</td><td>—</td><td>0 0 0 3px rgba(232,75,91,0.25)</td></tr>
         </tbody>
       </table>
 
-      <h2 id="States">States</h2>
-      <table class="token-table" style="margin-bottom:40px;">
-        <thead><tr><th>State</th><th>Preview (Md)</th></tr></thead>
-        <tbody>
-          ${TBX_STATE_VARIANTS.map(s => `
-          <tr>
-            <td><span class="token-name">${s.label}</span></td>
-            <td style="padding:6px 0;">
-              <div style="max-width:280px;">
-                <div class="${_tbxCls(s.key, 'md')}">
-                  <div class="bt-tbx__meta"><span class="bt-tbx__label">Label Text</span><span class="bt-tbx__required">Required Field</span></div>
-                  <div class="bt-tbx__input">${_ddInputInner(s.key)}</div>
-                  <span class="bt-tbx__helper">Helper Text</span>
-                </div>
-              </div>
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-
       <h2 id="Sizes">Sizes</h2>
-      <table class="token-table">
+      <table class="token-table" style="margin-bottom:40px;">
         <thead><tr><th>Size</th><th>Preview</th></tr></thead>
         <tbody>
           ${TBX_SIZE_OPTS.map(sz => `
@@ -4674,15 +5147,34 @@ PAGES_WEB['components/dropdown'] = {
               <div style="max-width:280px;">
                 <div class="bt-tbx bt-tbx--${sz.key}">
                   <div class="bt-tbx__meta"><span class="bt-tbx__label">Label Text</span></div>
-                  <div class="bt-tbx__input">
-                    <div class="bt-tbx__field"><span class="bt-tbx__text" style="color:var(--bt-text-primary-muted,#a3a3a3);white-space:nowrap;">Placeholder Text</span></div>
-                    <div class="bt-tbx__control bt-tbx__control--right"><span class="bt-tbx__icon">${_ddIconChevron}</span></div>
-                  </div>
-                  <span class="bt-tbx__helper">Helper Text</span>
+                  <div class="${_ddBaseCls('default', sz.key)}">${_ddBaseInner('default')}</div>
+                  <span class="bt-tbx__helper">Hint Text</span>
                 </div>
               </div>
             </td>
           </tr>`).join('')}
+        </tbody>
+      </table>
+
+      <h2 id="States">States</h2>
+      <table class="token-table">
+        <thead><tr><th>State</th><th>Preview (Md)</th></tr></thead>
+        <tbody>
+          ${TBX_STATE_VARIANTS.map(s => {
+            const isError = s.key === 'error' || s.key === 'error-focused';
+            return `
+          <tr>
+            <td><span class="token-name">${s.label}</span></td>
+            <td style="padding:6px 0;">
+              <div style="max-width:280px;">
+                <div class="bt-tbx bt-tbx--md${isError ? ' bt-tbx--error' : ''}">
+                  <div class="bt-tbx__meta"><span class="bt-tbx__label">Label Text</span></div>
+                  <div class="${_ddBaseCls(s.key, 'md')}">${_ddBaseInner(s.key)}</div>
+                  <span class="bt-tbx__helper${isError ? ' bt-tbx__helper--error' : ''}">${isError ? 'Error Text' : 'Hint Text'}</span>
+                </div>
+              </div>
+            </td>
+          </tr>`;}).join('')}
         </tbody>
       </table>
     `};
@@ -10686,9 +11178,9 @@ window.btGridFilterToggle = function(event, btn) {
   panel.className = 'bt-grid__filter-panel';
   panel.innerHTML = `
     <div class="bt-grid__filter-search">
-      <div class="bt-searchbox bt-searchbox--md" onclick="event.stopPropagation()">
-        <div class="bt-searchbox__control"><span class="bt-searchbox__icon">${sbxIconSearch}</span></div>
-        <div class="bt-searchbox__field"><input class="bt-searchbox__text" type="text" placeholder="Ara..." oninput="btGridFilterSearch(event,this)"></div>
+      <div class="bt-input bt-searchbox bt-input--md" onclick="event.stopPropagation()">
+        <div class="bt-input__control"><span class="bt-icon">${sbxIconSearch}</span></div>
+        <div class="bt-input__field"><input class="bt-input__text" type="text" placeholder="Ara..." oninput="btGridFilterSearch(event,this)"></div>
       </div>
     </div>
     <div class="bt-grid__filter-list">
@@ -16518,9 +17010,9 @@ PAGES_WEB['patterns/page-layouts'] = {
       <button class="bt-btn bt-btn--sm bt-btn--primary">Add Item</button>
       <button class="bt-btn bt-btn--sm bt-btn--base-outline">Edit</button>
       <button class="bt-btn bt-btn--sm bt-btn--base-outline">Delete</button>
-      <div class="bt-searchbox bt-searchbox--sm">
-        <div class="bt-searchbox__control"><span class="bt-searchbox__icon">${sbxIconSearch}</span></div>
-        <div class="bt-searchbox__field"><input class="bt-searchbox__text" type="text" placeholder="Search..." /></div>
+      <div class="bt-input bt-searchbox bt-input--sm">
+        <div class="bt-input__control"><span class="bt-icon">${sbxIconSearch}</span></div>
+        <div class="bt-input__field"><input class="bt-input__text" type="text" placeholder="Search..." /></div>
       </div>`;
 
     // ── DataTable (gerçek bt-grid-container + gridTableHtml()) ────────────────

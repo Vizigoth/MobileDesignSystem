@@ -281,6 +281,15 @@ Bir component'i tamamlamadan önce şunların tümü sağlanmış olmalı:
 - [ ] **CSS Properties tab**: Tüm component token'ları eksiksiz tablo
 - [ ] **Usage tab**: Do/Don't içeriği var, component'e özgü yanlış kullanım senaryoları
 
+## Properties Panelinde Eksen Etiketi: "Variant" mı "Type" mı — ZORUNLU
+
+Bir eksenin playground `props` panelindeki `label`'ı **rastgele seçilmez** — hangi dokümantasyon desenine girdiğine bağlıdır (2026-09-11'de SearchBox'ta "Type" mı "Variant" mı sorusu ikinci kez çıktığı için kural yazıya döküldü; Overflow Menu ve Avatar arasındaki organik/tutarsız isimlendirme geriye dönük düzeltilmedi, yeni component'ler bu kurala uyar):
+
+- **`label: 'Variant'`** → eksen aşağıdaki "Varyant Dokümantasyonu" deseni ile dokümante ediliyorsa (eksen component'in **davranışsal kimliğini** değiştiriyor — Overflow Menu'nün Basic/Submenu/Checkboxes'ı gibi, her değer gerçekten farklı bir etkileşim/mantık taşıyor).
+- **`label: 'Type'`** → eksen "Çok Eksenli (Multi-Axis) — Primary eksen" deseniyle dokümante ediliyorsa (eksen yalnızca **görsel/içerik/konfigürasyon** farkı yaratıyor, davranış aynı kalıyor — Avatar'ın Initials/Icon'u, SearchBox'ın Basic/Advanced Filtered'ı gibi).
+
+Karar zaten component eklerken yapılan "bu eksen hangi türden" sınıflandırmasının (bkz. aşağıdaki iki bölüm) doğrudan sonucu — ayrı bir isimlendirme kararı değil, o sınıflandırmayı yaptıktan sonra otomatik belli olur.
+
 ## Varyant Dokümantasyonu — Tek Sayfa Standardı — ZORUNLU
 
 Bir component'in birden fazla davranışsal varyantı varsa (örn. Card → Default/Clickable/Selectable/Collapsible/Scrollable), **bu varyantlar ayrı sidebar sayfaları olarak değil, ana component sayfasında TOC bölümleri olarak** dokümante edilir. Bu kural 2026-08-27'de Card component'i üzerinde uygulanmış ve tüm component'ler için genel standard olarak kabul edilmiştir.

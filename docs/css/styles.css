@@ -1904,6 +1904,25 @@ pre.code-block.line-numbers {
   color: var(--bt-text-primary-strong, #535353);
 }
 
+/* Editable text prop row (örn. TextBox'ın Label/Hint/Error Value'ları) —
+   dropdown yerine gerçek düzenlenebilir <input>, aynı Base Input kabuğu. */
+.pgd-drawer-input--text {
+  cursor: default;
+  padding-right: var(--bt-space-md, 8px);
+}
+.pgd-drawer-input--text:hover { background: var(--bt-base-default, #fff); }
+.pgd-drawer-input__text {
+  flex: 1 0 0;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  padding: 0;
+  font: var(--bt-text-xs-medium, 500 12px/16px var(--font));
+  color: var(--bt-text-primary-default, #1a1a1a);
+  text-align: right;
+}
+
 .pgd-preview-inner { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: auto; width: 100%; }
 .pgd-preview-inner.is-device { align-items: flex-start; margin: 0; }
 
@@ -2169,7 +2188,7 @@ pre.code-block.line-numbers {
   padding: var(--bt-space-2xl) var(--bt-space-xl);
   flex-shrink: 0;
 }
-/* Uses the real documented SearchBox component (.bt-searchbox--sm, 28px —
+/* Uses the real documented SearchBox component (.bt-input--sm, 28px —
    matches this drawer's Left Control padding-2xs exactly) instead of a
    static lookalike, same as the Standart Sidebar. Only the "Tab" shortcut
    hint below is sidebar-specific chrome the generic component doesn't have. */
@@ -3879,80 +3898,128 @@ pre.code-block.line-numbers {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   SEARCHBOX
-   <div class="bt-searchbox [--sm|--md|--lg] [--hover|--active|--disabled]">
-     <div class="bt-searchbox__control"><span class="bt-searchbox__icon">...</span></div>
-     <div class="bt-searchbox__field"><input class="bt-searchbox__text" /></div>
-     <div class="bt-searchbox__control">[clear icon, filled only]</div>
+   BASE INPUT (core shell — Figma "Base Input", tüm input tiplerinin
+   üzerine kurulduğu çekirdek). SearchBox bunun üzerine kompoze edilir
+   (ayrı bir iç wrapper değil, aynı elementte iki class birlikte):
+
+   <div class="bt-input bt-searchbox [--sm|--md|--lg] [--hover|--active|--disabled|--filled]">
+     <div class="bt-input__control"><span class="bt-icon">...</span></div>
+     <div class="bt-input__field"><input class="bt-input__text" /></div>
+     <div class="bt-input__control bt-input__control--fixed bt-input__control--clickable">[clear/filter]</div>
    </div>
-   --sm/--md/--lg controls height + internal padding. Hover/Active also apply
-   natively via :hover/:focus-within — modifier classes exist only to force a
-   state for documentation previews.
+
+   --sm/--md/--lg height + iç padding'i belirler. Hover/Active ayrıca
+   native :hover/:focus-within ile de çalışır — modifier class'lar
+   sadece dokümantasyon önizlemesinde bir state'i zorlamak için var.
+   Trailing control'ler (Clear/Filter) Figma'da boyuttan bağımsız sabit
+   28×28 — bu yüzden `--control--fixed` boyut modifier'larından
+   etkilenmez, her zaman spacing-2xs padding alır.
    ════════════════════════════════════════════════════════════════ */
-.bt-searchbox {
+.bt-input {
   display: flex;
   align-items: center;
   width: 100%;
   box-sizing: border-box;
-  background: var(--bt-surface-primary-default, #ffffff);
+  background: var(--bt-base-default, #ffffff);
   border: 1px solid var(--bt-border-primary-default, #d4d4d4);
-  border-radius: var(--bt-radius-md, 6px);
+  border-radius: var(--bt-radius-sm, 4px);
+  overflow: hidden;
   transition: border-color 0.15s;
 }
-.bt-searchbox--sm { height: 28px; }
-.bt-searchbox--md { height: 32px; }
-.bt-searchbox--lg { height: 36px; }
+.bt-input--sm { height: 28px; }
+.bt-input--md { height: 32px; }
+.bt-input--lg { height: 36px; }
 
-.bt-searchbox:not(.bt-searchbox--disabled):hover,
-.bt-searchbox--hover {
+.bt-input:not(.bt-input--disabled):not(.bt-input--readonly):not(.bt-input--error):hover,
+.bt-input--hover {
   border-color: var(--bt-border-brand-default, #0d4e97);
 }
-.bt-searchbox:not(.bt-searchbox--disabled):focus-within,
-.bt-searchbox--active {
+.bt-input:not(.bt-input--disabled):not(.bt-input--readonly):not(.bt-input--error):focus-within,
+.bt-input--focused,
+.bt-input--active {
   border-color: var(--bt-border-brand-default, #0d4e97);
   box-shadow: 0 0 0 3px rgba(13,78,151,0.25);
 }
-.bt-searchbox--disabled {
-  background: var(--bt-surface-secondary-subtle, #e6e6e6);
+.bt-input--disabled {
+  background: var(--bt-base-subtle, #f5f5f5);
+}
+/* Read Only / Error — TextBox ile eklendi, henüz sadece o kullanıyor ama
+   herhangi bir gelecekteki .bt-input tüketicisi (Dropdown, Select LookUp vb.
+   kendi Base Input geçişini yaptığında) buraya taşınmaya hazır bekliyor. */
+.bt-input--readonly {
+  background: var(--bt-base-subtle, #f5f5f5);
+}
+.bt-input--error {
+  border-color: var(--bt-border-error-default, #b31d38);
+}
+.bt-input--error-focused,
+.bt-input--error:focus-within {
+  border-color: var(--bt-border-error-default, #b31d38);
+  box-shadow: 0 0 0 3px rgba(232,75,91,0.25);
 }
 
-/* — Icon controls (search / clear) — */
-.bt-searchbox__control {
+/* — Icon controls — */
+.bt-input__control {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-}
-.bt-searchbox--sm .bt-searchbox__control { padding: var(--bt-space-2xs, 2px); }
-.bt-searchbox--md .bt-searchbox__control { padding: var(--bt-space-xs, 4px); }
-.bt-searchbox--lg .bt-searchbox__control { padding: var(--bt-space-sm, 6px); }
-
-.bt-searchbox__icon {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: var(--bt-icon-primary-strong, #535353);
-  flex-shrink: 0;
 }
-.bt-searchbox__icon svg { display: block; }
-.bt-searchbox__control--clickable { cursor: pointer; }
+.bt-input--sm .bt-input__control { padding: var(--bt-space-2xs, 2px); }
+.bt-input--md .bt-input__control { padding: var(--bt-space-xs, 4px); }
+.bt-input--lg .bt-input__control { padding: var(--bt-space-sm, 6px); }
+/* Trailing kontroller (Clear/Filter) Figma'da kendi Default/Hover/Active
+   state'lerini taşıyan ayrı component'ler (Input Clear Button / Input
+   Advanced Filter Button) — leading ikondan farklı olarak default'ta muted,
+   hover VE active'de (basılıyken) koyu renge döner. */
+.bt-input__control--fixed {
+  padding: var(--bt-space-2xs, 2px) !important;
+  color: var(--bt-icon-primary-muted, #a3a3a3);
+}
+.bt-input__control--clickable { cursor: pointer; }
+.bt-input__control--clickable:hover,
+.bt-input__control--clickable:active {
+  color: var(--bt-icon-primary-default, #1a1a1a);
+}
+.bt-input--disabled .bt-input__control { color: var(--bt-icon-primary-muted, #a3a3a3); }
+/* .bt-input__control--clear / --filter: kendi CSS'i yok, saf kimlik/izlenebilirlik
+   class'ı — Figma'daki "Input Clear Button" / "Input Advanced Filter Button"
+   component'lerine karşılık gelir (ikisi de görsel olarak --fixed/--clickable'dan
+   ayrılmıyor, ama Figma'da ayrı isimli component'ler oldukları için kodda da
+   ayrı işaretleniyorlar — ileride biri diğerinden farklılaşırsa buraya kural eklenir). */
+/* Validation (TextBox Error/Error Focused, sağ taraf) — Figma'da Clear/Filter'ın
+   --fixed deseninden (2px padding, 28×28) FARKLI: kendi padding'i yok, sabit 24×24,
+   tıklanamaz, her zaman error rengi. */
+.bt-input__control--validation {
+  padding: 0;
+  color: var(--bt-text-error-default, #b31d38);
+}
+/* Input Button (Content=Button, örn. Dropdown'ın chevron'u) — Content=Icon'dan
+   (SearchBox'ın leading arama ikonu gibi) FARKLI: hover/focus'ta arka plan
+   dolgusu alır (Figma'da doğrulandı — Dropdown node 1320:141221, ikon rengi
+   DEĞİŞMİYOR, sadece bg). Dropdown ile eklendi, TextBox/SearchBox'ta kullanılmıyor
+   (inert) ama Content=Button taşıyan her gelecekteki control için hazır. */
+.bt-input:not(.bt-input--disabled):hover .bt-input__control--button,
+.bt-input:not(.bt-input--disabled):focus-within .bt-input__control--button,
+.bt-input--active .bt-input__control--button {
+  background: var(--bt-base-subtle, #f5f5f5);
+}
 
 /* — Field / input — */
-.bt-searchbox__field {
+.bt-input__field {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
   box-sizing: border-box;
 }
-.bt-searchbox--sm .bt-searchbox__field { padding: var(--bt-space-xs, 4px); }
-.bt-searchbox--md .bt-searchbox__field { padding: var(--bt-space-sm, 6px) var(--bt-space-xs, 4px); }
-.bt-searchbox--lg .bt-searchbox__field { padding: var(--bt-space-md, 8px) var(--bt-space-xs, 4px); }
+.bt-input--sm .bt-input__field { padding: var(--bt-space-xs, 4px); }
+.bt-input--md .bt-input__field { padding: var(--bt-space-sm, 6px) var(--bt-space-xs, 4px); }
+.bt-input--lg .bt-input__field { padding: var(--bt-space-md, 8px) var(--bt-space-xs, 4px); }
 
-.bt-searchbox__text {
+.bt-input__text {
   flex: 1;
   min-width: 0;
   border: none;
@@ -3963,9 +4030,41 @@ pre.code-block.line-numbers {
   font: var(--bt-text-xs-regular, 400 12px/16px var(--font));
   color: var(--bt-text-primary-default, #1a1a1a);
 }
-.bt-searchbox__text::placeholder { color: var(--bt-text-primary-muted, #a3a3a3); }
-.bt-searchbox--disabled .bt-searchbox__text { cursor: not-allowed; }
-.bt-searchbox--disabled .bt-searchbox__icon { color: var(--bt-icon-primary-muted, #a3a3a3); }
+.bt-input__text::placeholder { color: var(--bt-text-primary-muted, #a3a3a3); }
+.bt-input--disabled .bt-input__text {
+  cursor: not-allowed;
+  color: var(--bt-text-primary-muted, #a3a3a3);
+  -webkit-text-fill-color: var(--bt-text-primary-muted, #a3a3a3);
+  opacity: 1;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SEARCHBOX — .bt-input çekirdeğinin üzerine kurulur (bkz. yukarısı).
+   Bu blok yalnızca SearchBox'a özgü davranış eklendiğinde kullanılır;
+   görsel shell (border/bg/radius/height) tamamen .bt-input'ta.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════════
+   TEXTBOX (Base Input) — .bt-tbx__box, .bt-tbx__meta/__label/__required/
+   __helper'ı (paylaşılan, aşağıdaki eski TEXTBOX bloğunda tanımlı) saran
+   dış .bt-tbx wrapper'ının İÇİNDEKİ kutu için .bt-input üzerine kurulan
+   kimlik class'ı — SearchBox'ın .bt-searchbox'ıyla birebir aynı desen.
+   Text Content padding'i TextBox'ta SearchBox'tan FARKLI (sol sabit 8px —
+   leading ikon yok; dikey sm/md/lg=6/8/10, SearchBox'ın 4/6/8'inden farklı)
+   — bu yüzden .bt-input__field'ın genel kuralı burada override ediliyor.
+   ════════════════════════════════════════════════════════════════ */
+.bt-tbx__box.bt-input--sm .bt-input__field { padding: var(--bt-space-sm, 6px) var(--bt-space-xs, 4px) var(--bt-space-sm, 6px) var(--bt-space-md, 8px); }
+.bt-tbx__box.bt-input--md .bt-input__field { padding: var(--bt-space-md, 8px) var(--bt-space-xs, 4px) var(--bt-space-md, 8px) var(--bt-space-md, 8px); }
+.bt-tbx__box.bt-input--lg .bt-input__field { padding: var(--bt-space-lg, 10px) var(--bt-space-xs, 4px) var(--bt-space-lg, 10px) var(--bt-space-md, 8px); }
+
+/* ════════════════════════════════════════════════════════════════
+   DROPDOWN (Base Input) — .bt-dd__box, TextBox'ın .bt-tbx__box'ıyla AYNI
+   Text Content padding kuralı: solda aktif control yok (control sağda,
+   chevron) → sol sabit --bt-space-md (8px), dikey sm/md/lg=6/8/10.
+   ════════════════════════════════════════════════════════════════ */
+.bt-dd__box.bt-input--sm .bt-input__field { padding: var(--bt-space-sm, 6px) var(--bt-space-xs, 4px) var(--bt-space-sm, 6px) var(--bt-space-md, 8px); }
+.bt-dd__box.bt-input--md .bt-input__field { padding: var(--bt-space-md, 8px) var(--bt-space-xs, 4px) var(--bt-space-md, 8px) var(--bt-space-md, 8px); }
+.bt-dd__box.bt-input--lg .bt-input__field { padding: var(--bt-space-lg, 10px) var(--bt-space-xs, 4px) var(--bt-space-lg, 10px) var(--bt-space-md, 8px); }
 
 /* ════════════════════════════════════════════════════════════════
    TEXTBOX
@@ -4234,7 +4333,11 @@ pre.code-block.line-numbers {
 .bt-tbx__helper {
   display: block;
   font: var(--bt-text-xs-regular, 400 12px/16px var(--font));
-  color: var(--bt-text-primary-default, #1a1a1a);
+  color: var(--bt-text-primary-emphasis, #727272);
+}
+/* Error Value (Figma) — Hint'in yerini alan kırmızı metin, Error/Error Focused'da. */
+.bt-tbx__helper--error {
+  color: var(--bt-text-error-default, #b31d38);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -7110,7 +7213,7 @@ pre.code-block.line-numbers {
      satırları/footer) KENDİ padding'inden geliyor. */
 }
 /* Search — bespoke bir input DEĞİL, gerçek SearchBox component'i
-   (.bt-searchbox--sm) reuse edilir (bkz. pages-web.js btGridFilterToggle). */
+   (.bt-input--md) reuse edilir (bkz. pages-web.js btGridFilterToggle). */
 .bt-grid__filter-search { padding: var(--bt-space-sm, 6px) var(--bt-space-sm, 6px) var(--bt-space-lg, 10px); }
 .bt-grid__filter-list {
   max-height: 220px;

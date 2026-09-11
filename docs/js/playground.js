@@ -64,6 +64,8 @@ function _pgdEnsureState(id, config) {
         props[p.key] = p.default != null
           ? (Array.isArray(p.default) ? p.default.join(',') : p.default)
           : p.options.map(o => o.key).join(',');
+      } else if (p.type === 'text') {
+        props[p.key] = p.default != null ? p.default : '';
       } else {
         props[p.key] = p.default || p.options[0].key;
       }
@@ -148,7 +150,18 @@ function renderPlayground(config) {
     </div>`;
   };
 
-  const _pgdPropControl = prop => prop.type === 'multiselect' ? _pgdPropMultiselect(prop) : _pgdPropDropdown(prop);
+  // Editable text prop (örn. TextBox'ın Label/Hint/Error Value'ları) — dropdown
+  // yerine gerçek <input>. data-pgd-text-key, _pgdRerender'ın her tuş
+  // vuruşunda odağı/imleç konumunu geri yükleyebilmesi için gerekli.
+  const _pgdPropTextInput = prop => {
+    const value = st.props[prop.key] || '';
+    return `<div class="pgd-drawer-input pgd-drawer-input--text">
+      <span class="pgd-drawer-input__label">${prop.label}</span>
+      <input type="text" class="pgd-drawer-input__text" data-pgd-text-key="${prop.key}" value="${_pgdEsc(value)}" oninput="_pgdSetTextProp('${config.id}','${prop.key}',this.value)" />
+    </div>`;
+  };
+
+  const _pgdPropControl = prop => prop.type === 'multiselect' ? _pgdPropMultiselect(prop) : prop.type === 'text' ? _pgdPropTextInput(prop) : _pgdPropDropdown(prop);
 
   // Grup listesi her zaman hesaplanır — drawer kullanır. `prop.group`'u önce
   // normalize edip (undefined→'') öyle kıyaslamak ZORUNLU: aksi halde art arda
@@ -323,12 +336,26 @@ function _pgdRerender(id) {
   const drawerScroll = drawer ? drawer.scrollTop : null;
   const preview = container.querySelector('.example-viewer-preview');
   const previewScroll = preview ? preview.scrollTop : null;
+  // Bir metin prop input'u (bkz. _pgdSetTextProp) her tuş vuruşunda tüm bloğu
+  // yeniden render ettiriyor — outerHTML replacement odağı/imleci kaybettirir,
+  // burada yakalayıp aşağıda aynı data-pgd-text-key'li input'a geri yüklüyoruz.
+  const active = document.activeElement;
+  const activeTextKey = (active && container.contains(active) && active.dataset && active.dataset.pgdTextKey) || null;
+  const activeSelStart = activeTextKey ? active.selectionStart : null;
+  const activeSelEnd   = activeTextKey ? active.selectionEnd   : null;
 
   container.outerHTML = renderPlayground(config);
 
   const newContainer = document.getElementById(id);
   if (!newContainer) return;
   if (window.applyCodeHighlighting) window.applyCodeHighlighting(newContainer);
+  if (activeTextKey) {
+    const newInput = newContainer.querySelector(`[data-pgd-text-key="${activeTextKey}"]`);
+    if (newInput) {
+      newInput.focus();
+      if (activeSelStart != null) newInput.setSelectionRange(activeSelStart, activeSelEnd);
+    }
+  }
   if (drawerScroll != null) {
     const newDrawer = newContainer.querySelector('.pgd-drawer');
     if (newDrawer) newDrawer.scrollTop = drawerScroll;
@@ -360,6 +387,17 @@ window._pgdSetProp = function(id, propKey, optionKey) {
   const st = _pgdState[id];
   st.props[propKey] = optionKey;
   st.openMenu = null;
+  _pgdRerender(id);
+};
+
+// Metin prop'u (örn. TextBox Label/Hint/Error Value) her tuş vuruşunda preview'i
+// canlı güncellemek için tüm playground bloğunu yeniden render eder — outerHTML
+// replacement odağı/imleci kaybettirir, bu yüzden _pgdRerender ayrıca hangi
+// data-pgd-text-key'in odaklı olduğunu ve imleç/seçim konumunu yakalayıp yeni
+// DOM'da aynı input'a geri yüklüyor (bkz. aşağısı).
+window._pgdSetTextProp = function(id, propKey, value) {
+  const st = _pgdState[id];
+  st.props[propKey] = value;
   _pgdRerender(id);
 };
 

@@ -4241,3 +4241,240 @@ Kapanışta `btOvfSubHide(sub)` önce torun submenu'leri (recursive), sonra kend
 ### 21.8 Not — eski API korundu
 
 `.bt-ovf-menu__item-icon` (16×16 eski ikon slotu) ve `.bt-ovf-menu__divider` (`<li>` tam-genişlik çizgi) CSS'te bırakıldı ama yeni implementasyon bunları kullanmıyor — grup ayrımı artık `.bt-ovf-menu__section + .bt-ovf-menu__section` border'ıyla yapılıyor.
+
+## 22. SearchBox (Base Input çekirdeği üzerine)
+
+Figma kaynağı: "Inputs NEW" sayfası (Bentas DS) — **Base Input** artık tüm input tiplerinin üzerine kurulduğu bağımsız bir çekirdek component (SearchBox ve ileride TextBox onu instance olarak sarıyor). Bu bölüm, 2026-09-11'de SearchBox'ın bu mimariye göre yeniden kurulmasını belgeler.
+
+**Not — TextBox henüz migrate edilmedi:** `.bt-tbx__input` (TextBox'ın kendi shell'i) bu geçişe dahil değil, kasıtlı olarak ayrı bir oturuma bırakıldı (TextBox zaten tamamlanmış/dokümante edilmiş, regresyon riskini izole etmek için). `.bt-input` bugün yalnız SearchBox tarafından kullanılıyor.
+
+### 22.1 Mimari — `.bt-input` çekirdek + SearchBox kompozisyonu
+
+`.bt-input`, Figma'nın "Base Input" component'inin kod karşılığı: border, background, border-radius, height (sm/md/lg) ve hover/focus(active)/disabled state renklerini taşıyan bağımsız bir shell class'ı (`docs/css/styles.css`, "BASE INPUT" bloğu). SearchBox bunun üzerine **ayrı bir iç wrapper olarak değil, aynı elementte iki class'ı birlikte** kullanarak kurulur — Figma'da Basic SearchBox'ın birebir bir Base Input instance'ı olmasıyla aynı mantık:
+
+```html
+<div class="bt-input bt-searchbox bt-input--sm">
+  <div class="bt-input__control"><span class="bt-icon">...search svg...</span></div>
+  <div class="bt-input__field"><input class="bt-input__text" oninput="sbxInput(this)" /></div>
+  <!-- Filled ise: -->
+  <div class="bt-input__control bt-input__control--fixed bt-input__control--clickable" onclick="sbxClear(this)"><span class="bt-icon">...x svg...</span></div>
+  <!-- Type=Advanced Filtered ise: -->
+  <div class="bt-input__control bt-input__control--fixed bt-input__control--clickable" onclick="sbxFilterToggle(this)"><span class="bt-icon">...sliders-horizontal svg...</span></div>
+</div>
+```
+
+`.bt-searchbox` kendi başına HİÇBİR görsel CSS taşımıyor (border/bg/radius/height tamamen `.bt-input`'ta) — yalnızca SearchBox'a özgü bir davranış eklenirse (bugün yok) oraya gidecek bir kimlik class'ı. Leading ikon kutusu (`.bt-input__control`) boyuta göre skalalanır (28/32/36, içinde her zaman sabit 24×24 `.bt-icon`); trailing kontroller (Clear/Filter, `.bt-input__control--fixed`) Figma'da boyuttan bağımsız sabit 28×28'dir.
+
+### 22.2 Type ekseni — Basic / Advanced Filtered
+
+İki tip, aynı `.bt-input` çekirdeğini paylaşır, yalnızca sağdaki trailing kontrol farklıdır:
+- **Basic**: yalnızca sol arama ikonu; Filled state'te sağda Clear (X) belirir.
+- **Advanced Filtered**: Basic'e ek olarak, state'ten bağımsız HER ZAMAN görünen bir Filter (`sliders-horizontal`) butonu; Filled'da Clear + Filter yan yana (Clear önce, Figma sırası).
+
+Filter butonunun tıklama davranışı Figma'da tanımlı değil (yalnızca görsel) — `sbxFilterToggle(el)` şu an sadece `.bt-input--filter-open` class'ını toggle'lıyor, gerçek bir filtre paneli entegrasyonu bu component'in kapsamı dışında.
+
+### 22.3 Düzeltilen 2 doğrulanmış bug (eski koddan)
+
+Figma Desktop Bridge (`get_design_context`) ile doğrulanan, eski `.bt-searchbox` implementasyonundaki 2 yanlış token:
+1. **Border-radius**: `--bt-radius-md` (6px) → doğrusu `--bt-radius-sm` (4px).
+2. **Disabled arkaplan**: `--bt-surface-secondary-subtle` (#e6e6e6) → doğrusu `--bt-base-subtle` (#f5f5f5).
+
+Ayrıca CLAUDE.md "İkon Wrapper Standardı" ihlali düzeltildi: özel `.bt-searchbox__icon` class'ı kaldırıldı, global `.bt-icon` kullanılıyor; el ile yaklaşık çizilmiş SVG'ler (`sbxIconSearch` eski `r="7"`, custom 10×10 X) gerçek Lucide path'leriyle (`search`, `x`, `sliders-horizontal` — `unpkg.com/lucide-static`) değiştirildi.
+
+### 22.4 Diğer reuse noktaları
+
+`.bt-searchbox`'ı reuse eden yerler (Standart/Hub Sidebar arama kutusu, Data Table filtre paneli arama alanı, Design Examples örneği) yeni `.bt-input bt-searchbox bt-input--{sm|md}` + `.bt-input__control`/`.bt-input__field`/`.bt-input__text`/`.bt-icon` yapısına geçirildi — görsel sonuç değişmedi, yalnızca class isimleri güncellendi.
+
+### 22.5 Docs sayfası (`components/searchbox`)
+
+4-tab standardı + Primary eksen (Type) dokümantasyon deseni uygulandı (`add-component` skill): Overview'da master playground (`pgd-sbx-overview`, props: type → size) + Anatomy/Sizes/States (core) + Types karşılaştırma tablosu + her tip için kilitli playground (`pgd-sbx-basic-sec`/`pgd-sbx-advanced-filtered-sec`) + kendi States/Anatomy alt tabloları. TOC: `Anatomy, Sizes, States, Types, Basic, Advanced Filtered`.
+
+### 22.6 STANDART — Clear butonu ve "Filled" gerçekten interaktif olmalı
+
+Herhangi bir input component'inde Clear butonu varsa (`.bt-input__control--clear`), bu buton
+**yalnızca dokümantasyon amaçlı statik bir Filled state göstergesi DEĞİL** — gerçek `<input>`'a
+yazı yazıldığında canlı olarak DOM'a eklenip/kaldırılmalı, tıklanınca input'u fiilen temizleyip
+kendini kaldırmalı (kullanıcı isteği, 2026-09-11 devam — "clear button her inputta yazılan değeri
+clear ediyor şeklinde çalışıyor olmalı, bu bir standart olmalı... gerçek bir input gibi
+kullanalım"). Referans implementasyon: `sbxInput`/`sbxClear` (SearchBox) ve `tbxBaseInput`/
+`tbxBaseClear` (TextBox), `pages-web.js` — `oninput` ile `el.value.length>0` kontrolü yapıp Clear
+butonunu (helper fonksiyonla üretilen aynı DOM parçası) `insertBefore`/`appendChild` ile ekliyor,
+`onclick`'te `input.value=''` + `el.remove()` ile hem input'u hem kendini temizliyor. Advanced
+Filtered gibi birden fazla trailing control olan durumlarda Clear, diğer sabit butonun (Filter)
+HEMEN ÖNÜNE ekleniyor. Base Input'a dayanan HER YENİ component (Dropdown, Select LookUp vb.) bu
+deseni uygulamalı — kullanıcı ayrıca hatırlatmasın.
+
+## 23. TextBox (Base Input üzerine — SearchBox'tan sonraki 2. adım)
+
+SearchBox'ın ardından, "tüm input component'lerini tek tek `.bt-input` çekirdeğine taşıma" programının
+2. adımı TextBox oldu (bkz. §22 — SearchBox, aynı programın 1. adımı). Figma Desktop Bridge ile
+TextBox'ın "Inputs NEW" sayfasındaki (node `1308:135866`) TÜM 9 state'i (Default/Hover/Focused/
+Active/Filled/Disabled/Read Only/Error/Error Focused, sm/md/lg) tek tek `get_design_context` ile
+incelendi.
+
+### 23.1 Doğrulanmış 5 bug (eski koddan)
+
+1. **Text Content sol padding**: Figma'da tüm boyutlarda sabit **8px** (`--bt-space-md`). Eski kod
+   `--bt-space-xl` (**12px**) kullanıyordu.
+2. **Dikey padding ölçeği bir basamak kaymıştı**: Figma sm=**6px**/md=**8px**/lg=**10px**
+   (`--bt-space-sm/md/lg`). Eski kod sm=4px/md=6px/lg=8px kullanıyordu (her boyut bir alttakinin
+   değerini almıştı).
+3. **Hint text rengi**: Figma "Hint Value" → `--bt-text-primary-emphasis` (#727272). Eski kod
+   `--bt-text-primary-default` (#1a1a1a, koyu) kullanıyordu.
+4. **Error text hiç gösterilmiyordu**: Figma'da Error/Error Focused'da Hint'in yerini alan ayrı,
+   kırmızı bir "Error Value" metni var. Eski kod state'ten bağımsız hep aynı gri "Helper Text"i
+   gösteriyordu.
+5. **Validation ikonu (Error, sağ)**: Figma'da `padding:0`, sabit 24×24 — Clear/Filter'ın
+   `--fixed` (2px+24=28×28) deseninden farklı kendi footprint'i var. Eski kod bunu genel kontrol
+   padding'iyle karıştırıyordu.
+
+### 23.2 Mimari — SearchBox'la aynı desen, ama kritik bir kapsam kısıtıyla
+
+TextBox'ın "Input" kutusu, SearchBox'taki gibi `.bt-input` çekirdeğini (border/bg/radius/height/
+hover/focus/active/disabled) aynı elementte yeni bir kimlik class'ıyla (`.bt-tbx__box`) kompoze
+eder — SearchBox'ın parçalarını (`.bt-input__field`, `.bt-input__text`, `.bt-input__control`,
+`.bt-icon`, `.bt-input__control--fixed/--clear`) doğrudan reuse eder, yeniden yazmaz.
+
+**Kritik fark:** `.bt-tbx__input`, `_tbxCls()`, `_tbxInputInner()`, `tbxCss()`
+(`pages-web.js:4021-4132`) SADECE TextBox'ta değil, **Select LookUp, Dropdown, MultiSelect, Date
+Picker, Textarea, Data Table Inline/InCell Editing, Accordion ve Dialog örnekleri** dahil 9 farklı
+yerde reuse ediliyor — hiçbiri bu oturumda Figma'dan doğrulanmadı. Bu yüzden bu paylaşılan
+fonksiyonlara/class'a **DOKUNULMADI**; TextBox için paralel, yeni fonksiyonlar yazıldı (`tbxBaseCls`
+yerine `_tbxBaseCls`, `_tbxBaseInner`, `tbxBasePreview`, `tbxBaseCode`, `tbxBaseCss`). Bu kalıcı bir
+çatallanma değil — geçiş sürecinin ilk adımı: Dropdown/Select LookUp/vb.'nin turu geldiğinde onlar
+da kendi doğrulanmış değerleriyle aynı yola taşınacak, sonunda hepsi `tbxBase*`'te (veya ortak bir
+isimde) birleşip eski `_tbxCls`/`_tbxInputInner` silinecek.
+
+**`.bt-input`'a genel/paylaşılan olarak eklenenler** (SearchBox'ta yoktu, TextBox'la geldi ama
+gelecekteki her `.bt-input` tüketicisi için hazır): `.bt-input--readonly`, `.bt-input--error`,
+`.bt-input--error-focused`, `.bt-input--disabled .bt-input__text` metin rengi override'ı,
+`.bt-input__control--validation` (Clear/Filter'ın `--fixed`'inden farklı, padding'siz sabit 24×24).
+Bunlar SearchBox için inert (hiç kullanılmıyor) ama zararsız.
+
+**Bilinçli, onaylı bir istisna:** `.bt-tbx__helper` (Hint/Helper metni) paylaşılan bir class —
+rengini düzeltmek (`--bt-text-primary-default` → `--bt-text-primary-emphasis`) Select LookUp/
+Dropdown/Date Picker sayfalarındaki Helper Text'i de gri yaptı (Textarea etkilenmedi — o `.bt-txa`
+adında tamamen ayrı bir class ailesi kullanıyor, `.bt-tbx` değil). Kullanıcıya soruldu, kullanıcı bu
+paylaşılan düzeltmeyi bilinçli olarak onayladı (Hint text rengi tasarım sisteminde evrensel bir
+kural olduğu için) — "diğer component'ler hiç değişmemeli" kuralının tek, açıkça onaylı istisnası.
+Yeni `.bt-tbx__helper--error` modifier'ı (kırmızı) sadece TextBox'ın yeni fonksiyonları tarafından
+kullanılıyor.
+
+### 23.3 Field padding component-özel
+
+SearchBox'ın dikey padding skalası (sm=4/md=6/lg=8) ile TextBox'ınki (sm=6/md=8/lg=10) Figma'da
+FARKLI — `.bt-input__field`'ın padding'i düz `.bt-input--sm/md/lg` kuralıyla paylaşılamıyor.
+Çözüm: `.bt-tbx__box.bt-input--{sm|md|lg} .bt-input__field` şeklinde ata-scoped override
+(`docs/css/styles.css`, "TEXTBOX (Base Input)" bloğu) — sol her zaman sabit `--bt-space-md` (8px),
+`.bt-input__field`'ın SearchBox'taki genel kuralları değişmeden kalıyor.
+
+### 23.4 Docs sayfası
+
+TOC sırası add-component skill'in "Anatomy → Sizes → States" sabit blok kuralına uydurmak için
+`['Anatomy','States','Sizes']` → `['Anatomy','Sizes','States']` düzeltildi (hem TOC dizisi hem
+sayfa gövdesindeki h2 sırası birlikte taşındı). Master playground'a `variantLabel: 'State'`
+eklendi (SearchBox'takiyle aynı düzeltme — üst dropdown genel "Variant" yerine "State" gösteriyor).
+
+### 23.5 Properties paneli düzeltmesi — Figma'nın gerçek property modeli (aynı gün, devam)
+
+İlk implementasyonda Properties paneli eski (Base Input öncesi) TextBox'ın "Label / Required /
+Helper" üçlü boolean'ını aynen taşımıştı — kullanıcı bunun Figma'nın yeni component'iyle
+uyuşmadığını fark etti. `get_metadata` ile "Label Value" frame'i (`1308:134467`) tekrar incelendi:
+tek çocuğu var (`1308:134468`, "Label Text") — "Required Field" diye bir text layer/property Figma'da
+HİÇ YOK, eski implementasyondan kalma bir icat. Gerçek `get_design_context` prop arayüzü:
+`labelValue`/`hintValue`/`errorValue` (metin) + `showLabelText`/`showHintText`/`showErrorText`
+(boolean) — üçü tamamen BAĞIMSIZ (Figma'nın "Error" state örneğinde bile `showErrorText`
+varsayılanı `false`; Hint ve Error aynı anda gösterilebilir, birbirinin yerini almaz).
+
+**Playground'a yeni özellik — editable text prop:** `docs/js/playground.js`'e ilk kez bir
+`type: 'text'` prop tipi eklendi (`_pgdPropTextInput`, `.pgd-drawer-input--text`/
+`.pgd-drawer-input__text` CSS, `window._pgdSetTextProp`) — dropdown yerine gerçek bir `<input>`,
+her tuş vuruşunda `_pgdRerender` ile preview'i canlı günceller. `_pgdRerender` outerHTML replacement
+kullandığı için (odağı/imleci siler) `document.activeElement`'in `data-pgd-text-key`'ini ve
+`selectionStart/End`'ini yakalayıp yeniden render sonrası aynı input'a geri yüklüyor — bu, ileride
+editable text prop'u olan HER component için otomatik çalışır (playground.js'e genel bir yetenek
+olarak eklendi, TextBox'a özel değil).
+
+`sharedProps` yeniden yazıldı: `label`/`labelValue`, `hint`/`hintValue`, `error`/`errorValue` (üçü
+bağımsız, `error` varsayılanı `off`) — "Required" tamamen kaldırıldı. `tbxBasePreview`/`tbxBaseCode`
+artık Hint ve Error'ı State'e göre otomatik seçmiyor (ilk implementasyonun hatası buydu) — ikisi de
+kullanıcının kendi toggle'ına bağlı, aynı anda gösterilebiliyor (Figma'ya birebir sadık).
+`TBX_SIZE_OPTS` (paylaşılan, Select LookUp/Dropdown/Date Picker/Textarea "Md (Default)" diyor)
+yerine TextBox'a özel `TBX_BASE_SIZE_OPTS` (Sm Default — TextBox'ın kendi Figma kaynağı `size =
+"sm"` varsayılanını her fetch'te doğruladı) kullanılıyor, paylaşılan array'e dokunulmadı.
+
+## 24. Dropdown (Base Input üzerine — TextBox'tan sonraki 3. adım)
+
+TextBox'ın ardından, "tüm input component'lerini tek tek `.bt-input` çekirdeğine taşıma"
+programının 3. adımı Dropdown oldu (bkz. §22 SearchBox, §23 TextBox). Kullanıcı Figma'da
+Dropdown'ı "Inputs NEW" sayfasına TextBox'la BİREBİR AYNI 9-state yapıda ekledi (node
+`1320:141166`); Figma Desktop Bridge ile tüm state'ler `get_design_context` ile incelendi.
+
+### 24.1 Mimari — TextBox'la neredeyse birebir aynı, TEK gerçek fark: sağdaki chevron
+
+Dropdown'ın "Input" kutusu TextBox'takiyle aynı desende `.bt-input` çekirdeğini yeni bir kimlik
+class'ıyla (`.bt-dd__box`) kompoze eder. Value alanı TextBox'ın `<input>`'ından FARKLI olarak her
+zaman bir `<span>` — Dropdown gerçek metin girişi almıyor, seçim yapıyor. Sağda HER ZAMAN görünen
+bir chevron **Input Button** var (Input Controls component'i üzerinden) — bu, Figma'da Content=
+Button ailesine ait, gerçek bir hover arka-plan-dolgusu davranışı gösteriyor (Content=Icon
+ailesindeki statik glyph'lerden FARKLI). Bunu yansıtmak için yeni, genel `.bt-input__control--button`
+class'ı eklendi (`docs/css/styles.css`, hover/focus/active'de `--bt-base-subtle` arka plan) — Content=
+Button olan HER gelecekteki control (bugün sadece Dropdown'ın chevron'u) bunu kullanabilir.
+
+### 24.2 Doğrulanmış, TEK GERÇEK 2 düzeltme (diğerleri "bug" değil — ayrıntı için 24.3)
+
+1. **Chevron ikonu el ile çizilmişti** (`_ddIconChevron`/`_ddIconChevronUp`, 12×7 custom SVG) —
+   gerçek Lucide `chevron-down`/`chevron-up` (`ddBaseIconChevronDown/Up`) ile değiştirildi, CLAUDE.md
+   "İkon Wrapper Standardı"na uyularak `.bt-icon` içinde.
+2. **Validation ikonu (Error) ile Clear ikonu (Filled) farklı boyut kuralına sahip**: Clear
+   `.bt-input__control--fixed` (2px padding + 24×24 = 28×28 sabit), Validation padding'siz düz
+   24×24 — TextBox'ta zaten kurulan `.bt-input__control--validation` doğrudan reuse edildi.
+
+### 24.3 "Bug" DEĞİL — zaten kurulmuş standardın Dropdown'a henüz yansımamış hali
+
+Bu component'in incelemesinde, TextBox'ta doğrulanmış standartların Dropdown'ın (henüz eski
+paylaşılan `_tbxCls`'i kullandığı için) eski görünümüyle karşılaştırılıp yanlışlıkla "yeni bug"
+olarak raporlanma riski oluştu — kullanıcı bunu düzeltti, ileride tekrarlanmaması için:
+
+- **Text Content sol padding'i "8px olmalı, 12px kullanılıyor" bir bug değil** — padding Base
+  Input'ta değil Text Content'te yaşıyor ve kuralı **solda aktif bir control (icon/button) olup
+  olmamasına bağlı**: yoksa 8px (`--bt-space-md`), varsa 4px (`--bt-space-xs`, ör. SearchBox'ın sol
+  arama ikonu). Dropdown'da sol control yok (control sağda, chevron) → 8px zaten doğru kural.
+- **Dikey padding skalasının "bir basamak kaymış" görünmesi bug değil** — Dropdown eski paylaşılan
+  `_tbxCls`/`.bt-tbx__field`'ı kullandığı için henüz eski (4/6/8px) değerleri gösteriyordu;
+  TextBox'ta kurulan yeni standart (sm=6/md=8/lg=10, `--bt-space-sm/md/lg`) migrasyonla otomatik
+  gelir, ayrıca dokunmaya gerek yok.
+- **Hint text rengi zaten paylaşılan `.bt-tbx__helper`'da düzeltildi** (§23.2'deki bilinçli
+  istisna) — Dropdown dahil TÜM `.bt-tbx__helper` tüketicileri otomatik doğru, her component'te
+  yeniden "bug" olarak raporlanmamalı.
+- **"Required Field yok" ve "Hint/Error State'ten bağımsız" bir eksiklik değil, KURULU STANDART**
+  (§23.5) — Dropdown da aynı modeli uyguluyor: Required Field yok, Hint ve Error birbirinden ve
+  State'ten bağımsız, ikisi de kullanıcının kendi toggle'ına bağlı.
+
+### 24.4 Korunan gerçek interaktivite + Clear standardı
+
+Eski koddaki `btDdToggle` (Default state'te kutuya tıklayınca `.bt-dd-options` panelini açıp
+kapatan, chevron'u down↔up çeviren) DEĞERLİ bir davranış — Figma bunu modellemiyor (statik state
+kütüphanesi) ama üründe zaten var. Base Input mimarisine uyarlanmış yeni bir kopyası
+(`window.ddBaseToggle`) yazıldı; `.bt-input--active` zaten çekirdekte gerçek border+ring kuralına
+sahip olduğu için ayrı bir "açık" class'ı icat edilmedi. Filled state'in Clear butonu §22.6
+standardını izliyor (`ddBaseClear`) — tıklanınca value span'ı placeholder görünümüne döner, buton
+kendini kaldırır; canlı olarak tarayıcıda doğrulandı.
+
+### 24.5 Kapsam kısıtı (SearchBox/TextBox'takiyle aynı gerekçe)
+
+`_ddInputInner`, `_ddIconChevron`/`_ddIconChevronUp`, `btDdToggle`, `_ddOptionsHtml`, `_tbxCls`
+Dropdown'ın kendi sayfası DIŞINDA da kullanılıyor (Dialog form örneği — `components/dialog` sayfası,
+`dialogHtml()` — ve Data Table Grid'in Inline/InCell Editing hücreleri) — hiçbiri bu oturumda
+değiştirilmedi, ikisi de tarayıcıda canlı test edilip görsel/davranışsal olarak DEĞİŞMEMİŞ olduğu
+doğrulandı. Dropdown'ın kendi sayfası için TextBox'taki gibi paralel `ddBase*` fonksiyonlar yazıldı
+(`_ddBaseCls`, `_ddBaseInner`, `ddBasePreview`, `ddBaseCode`, `ddBaseCss`), `.bt-dd__box` kimlik
+class'ıyla.
+
+### 24.6 Docs sayfası
+
+TOC `['Anatomy','Sizes','States']` (h2 sırası da buna göre taşındı). `size` varsayılanı gerçekten
+**Md** (Figma açıkça "Size=md (default)" diye işaretlemiş — SearchBox/TextBox'ın "sm (default)"
+durumundan FARKLI) — paylaşılan `TBX_SIZE_OPTS` doğrudan reuse edildi, TextBox'taki gibi ayrı bir
+`_SIZE_OPTS` icat edilmedi (zaten doğru default'u taşıyordu). Properties paneli §23.5'teki modeli
+uyguluyor: State/Size + bağımsız Label/Hint/Error (Show toggle + editable text).
